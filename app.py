@@ -306,47 +306,63 @@ def apply_dashboard_theme():
 
         .dna-stage {
             position: absolute;
-            right: 8px;
-            top: 6px;
-            width: 230px;
-            height: 210px;
+            right: 10px;
+            top: 4px;
+            width: 285px;
+            height: 250px;
             opacity: .95;
+            perspective: 900px;
         }
 
-        .dna-rail {
-            position: absolute;
-            inset: 0;
-            border-radius: 50%;
-            animation: dnaSway 4s ease-in-out infinite alternate;
+        .dna-helix-svg {
+            width: 100%;
+            height: 100%;
+            overflow: visible;
+            filter: drop-shadow(0 0 18px rgba(39,231,194,.24));
+            animation: dnaFloat3d 6s ease-in-out infinite;
+            transform-origin: center;
         }
 
-        .strand {
-            position: absolute;
-            top: 5px;
-            width: 6px;
-            height: 190px;
-            border-radius: 999px;
-            background: linear-gradient(#27e7c2, transparent, #4da3ff);
-            box-shadow: 0 0 18px rgba(39,231,194,.55);
+        .dna-stage:hover .dna-helix-svg {
+            animation-duration: 2.2s;
+            transform: rotateY(18deg) scale(1.04);
         }
 
-        .strand.left { left: 77px; transform: rotate(22deg); }
-        .strand.right { right: 77px; transform: rotate(-22deg); }
-
-        .rung {
-            position: absolute;
-            left: 78px;
-            width: 78px;
-            height: 2px;
-            background: repeating-linear-gradient(90deg, rgba(77,163,255,.8) 0 6px, transparent 6px 12px);
-            opacity: .8;
+        .dna-strand-a,
+        .dna-strand-b {
+            fill: none;
+            stroke-width: 5;
+            stroke-linecap: round;
+            stroke-dasharray: 10 12;
+            animation: strandFlow 3.4s linear infinite;
         }
 
-        .rung.r1 { top: 32px; }
-        .rung.r2 { top: 62px; }
-        .rung.r3 { top: 92px; }
-        .rung.r4 { top: 122px; }
-        .rung.r5 { top: 152px; }
+        .dna-strand-a { stroke: #27e7c2; }
+        .dna-strand-b { stroke: #4da3ff; animation-delay: -.8s; }
+
+        .h-bond {
+            stroke: rgba(175, 220, 255, .72);
+            stroke-width: 2;
+            stroke-dasharray: 4 6;
+            animation: bondPulse 2.4s ease-in-out infinite;
+        }
+
+        .base-node {
+            fill: #07111f;
+            stroke-width: 3;
+            animation: baseGlow 2.8s ease-in-out infinite;
+        }
+
+        .node-a { stroke: #27e7c2; }
+        .node-b { stroke: #4da3ff; }
+
+        .dna-label {
+            fill: #8fb2d8;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            opacity: .9;
+        }
 
         .orb {
             position: absolute;
@@ -362,6 +378,83 @@ def apply_dashboard_theme():
         .orb.o2 { right: 42px; top: 18px; color: #4da3ff; animation-delay: .25s; }
         .orb.o3 { left: 28px; top: 88px; color: #27e7c2; animation-delay: .5s; }
         .orb.o4 { right: 26px; top: 130px; color: #4da3ff; animation-delay: .75s; }
+
+        .organ-visual-panel {
+            display: grid;
+            grid-template-columns: 1.05fr .95fr;
+            gap: 18px;
+            align-items: center;
+            background:
+                radial-gradient(circle at 82% 35%, rgba(39,231,194,.10), transparent 35%),
+                rgba(12, 22, 38, 0.62);
+            border: 1px solid rgba(77, 163, 255, 0.16);
+            border-radius: 16px;
+            padding: 18px;
+            margin: 12px 0 20px 0;
+            box-shadow: 0 20px 60px rgba(0,0,0,.18);
+        }
+
+        .organ-copy h2 {
+            margin: 0 0 8px 0;
+        }
+
+        .organ-copy p {
+            color: #9fc1e7;
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        .organ-svg-wrap {
+            min-height: 230px;
+            display: grid;
+            place-items: center;
+            border-radius: 14px;
+            border: 1px solid rgba(77,163,255,.14);
+            background:
+                radial-gradient(circle at 50% 50%, rgba(77,163,255,.12), transparent 46%),
+                rgba(255,255,255,.035);
+            overflow: hidden;
+        }
+
+        .organ-svg {
+            width: min(100%, 360px);
+            height: 230px;
+            overflow: visible;
+        }
+
+        .organ-main {
+            fill: rgba(39,231,194,.16);
+            stroke: var(--organ-tone);
+            stroke-width: 3;
+            filter: drop-shadow(0 0 18px rgba(39,231,194,.25));
+            transform-origin: center;
+            animation: organBreathe 3.4s ease-in-out infinite;
+        }
+
+        .organ-secondary {
+            fill: none;
+            stroke: rgba(143,178,216,.75);
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-dasharray: 7 9;
+            animation: vesselFlow 3s linear infinite;
+        }
+
+        .organ-node {
+            fill: var(--organ-tone);
+            opacity: .95;
+            filter: drop-shadow(0 0 8px var(--organ-tone));
+            animation: baseGlow 2.2s ease-in-out infinite;
+        }
+
+        .organ-svg-wrap:hover .organ-main {
+            animation-duration: 1.4s;
+            filter: drop-shadow(0 0 28px var(--organ-tone));
+        }
+
+        .organ-svg-wrap:hover .organ-secondary {
+            stroke-dashoffset: -34;
+        }
 
         .section-panel {
             background: rgba(12, 22, 38, 0.62);
@@ -865,9 +958,34 @@ def apply_dashboard_theme():
             50% { transform: translate(9px, -10px); }
         }
 
-        @keyframes dnaSway {
-            from { transform: rotate(-4deg) translateY(0); }
-            to { transform: rotate(4deg) translateY(8px); }
+        @keyframes dnaFloat3d {
+            0%, 100% { transform: rotateY(-10deg) rotateZ(-2deg) translateY(0); }
+            50% { transform: rotateY(12deg) rotateZ(2deg) translateY(8px); }
+        }
+
+        @keyframes strandFlow {
+            from { stroke-dashoffset: 0; }
+            to { stroke-dashoffset: -44; }
+        }
+
+        @keyframes bondPulse {
+            0%, 100% { opacity: .35; stroke-width: 1.4; }
+            50% { opacity: .95; stroke-width: 2.4; }
+        }
+
+        @keyframes baseGlow {
+            0%, 100% { opacity: .65; transform: scale(.92); }
+            50% { opacity: 1; transform: scale(1.08); }
+        }
+
+        @keyframes organBreathe {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.035); }
+        }
+
+        @keyframes vesselFlow {
+            from { stroke-dashoffset: 0; }
+            to { stroke-dashoffset: -32; }
         }
 
         @keyframes riseIn {
@@ -918,19 +1036,43 @@ def render_hero():
                 <div class="stat-card"><strong>PDF</strong><span>Medical report</span></div>
             </div>
             <div class="dna-stage">
-                <div class="dna-rail">
-                    <div class="strand left"></div>
-                    <div class="strand right"></div>
-                    <div class="rung r1"></div>
-                    <div class="rung r2"></div>
-                    <div class="rung r3"></div>
-                    <div class="rung r4"></div>
-                    <div class="rung r5"></div>
-                    <div class="orb o1"></div>
-                    <div class="orb o2"></div>
-                    <div class="orb o3"></div>
-                    <div class="orb o4"></div>
-                </div>
+                <svg class="dna-helix-svg" viewBox="0 0 260 250" role="img" aria-label="Interactive DNA double helix">
+                    <defs>
+                        <linearGradient id="dnaA" x1="0" x2="1">
+                            <stop offset="0%" stop-color="#27e7c2"/>
+                            <stop offset="100%" stop-color="#64ffe8"/>
+                        </linearGradient>
+                        <linearGradient id="dnaB" x1="0" x2="1">
+                            <stop offset="0%" stop-color="#4da3ff"/>
+                            <stop offset="100%" stop-color="#9dbdff"/>
+                        </linearGradient>
+                    </defs>
+                    <path class="dna-strand-a" stroke="url(#dnaA)" d="M82 20 C178 48, 178 78, 82 106 C-14 134, -14 166, 82 194 C134 209, 170 222, 182 236"/>
+                    <path class="dna-strand-b" stroke="url(#dnaB)" d="M178 20 C82 48, 82 78, 178 106 C274 134, 274 166, 178 194 C126 209, 90 222, 78 236"/>
+                    <line class="h-bond" x1="88" y1="34" x2="172" y2="34"/>
+                    <line class="h-bond" x1="113" y1="62" x2="147" y2="62"/>
+                    <line class="h-bond" x1="84" y1="92" x2="176" y2="92"/>
+                    <line class="h-bond" x1="78" y1="124" x2="182" y2="124"/>
+                    <line class="h-bond" x1="86" y1="156" x2="174" y2="156"/>
+                    <line class="h-bond" x1="111" y1="186" x2="149" y2="186"/>
+                    <line class="h-bond" x1="84" y1="216" x2="176" y2="216"/>
+                    <circle class="base-node node-a" cx="88" cy="34" r="7"/>
+                    <circle class="base-node node-b" cx="172" cy="34" r="7"/>
+                    <circle class="base-node node-a" cx="113" cy="62" r="6"/>
+                    <circle class="base-node node-b" cx="147" cy="62" r="6"/>
+                    <circle class="base-node node-a" cx="84" cy="92" r="7"/>
+                    <circle class="base-node node-b" cx="176" cy="92" r="7"/>
+                    <circle class="base-node node-a" cx="78" cy="124" r="7"/>
+                    <circle class="base-node node-b" cx="182" cy="124" r="7"/>
+                    <circle class="base-node node-a" cx="86" cy="156" r="7"/>
+                    <circle class="base-node node-b" cx="174" cy="156" r="7"/>
+                    <circle class="base-node node-a" cx="111" cy="186" r="6"/>
+                    <circle class="base-node node-b" cx="149" cy="186" r="6"/>
+                    <circle class="base-node node-a" cx="84" cy="216" r="7"/>
+                    <circle class="base-node node-b" cx="176" cy="216" r="7"/>
+                    <text class="dna-label" x="12" y="236">H-BONDS</text>
+                    <text class="dna-label" x="176" y="18">DNA HELIX</text>
+                </svg>
             </div>
         </div>
         """,
@@ -997,6 +1139,83 @@ def render_context_panel(disease):
                 <h2 style="margin:0;">{data['organ']} - blood markers</h2>
             </div>
             <p style="color:#9fc1e7;margin-top:0;">{data['summary']}</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def organ_svg_markup(disease):
+    tone = ORGAN_DATA[disease]["tone"]
+    if disease == "Diabetes":
+        return f"""
+        <svg class="organ-svg" viewBox="0 0 360 240" style="--organ-tone:{tone};" role="img" aria-label="Interactive pancreas organ drawing">
+            <path class="organ-main" d="M63 130 C80 76, 132 72, 164 103 C186 124, 217 104, 247 84 C288 58, 333 80, 327 125 C321 169, 275 179, 235 158 C204 142, 185 145, 164 166 C132 199, 76 184, 63 130 Z"/>
+            <path class="organ-secondary" d="M96 135 C135 103, 180 128, 222 108 C254 94, 282 95, 306 116"/>
+            <path class="organ-secondary" d="M118 158 C145 143, 175 149, 204 137"/>
+            <circle class="organ-node" cx="118" cy="111" r="6"/>
+            <circle class="organ-node" cx="203" cy="132" r="7"/>
+            <circle class="organ-node" cx="287" cy="116" r="6"/>
+            <text x="118" y="220" fill="#8fb2d8" font-size="13" font-weight="800">PANCREAS / INSULIN RESPONSE</text>
+        </svg>
+        """
+    if disease == "Heart":
+        return f"""
+        <svg class="organ-svg" viewBox="0 0 360 240" style="--organ-tone:{tone};" role="img" aria-label="Interactive heart organ drawing">
+            <path class="organ-main" d="M180 205 C72 136, 55 65, 106 43 C137 30, 165 49, 180 76 C196 49, 224 30, 255 43 C306 65, 288 136, 180 205 Z"/>
+            <path class="organ-secondary" d="M180 76 C169 111, 173 144, 180 205"/>
+            <path class="organ-secondary" d="M130 78 C150 94, 166 112, 181 135 C203 116, 225 100, 251 86"/>
+            <path class="organ-secondary" d="M145 35 C142 18, 151 11, 168 23"/>
+            <path class="organ-secondary" d="M217 35 C220 18, 211 11, 194 23"/>
+            <circle class="organ-node" cx="142" cy="91" r="6"/>
+            <circle class="organ-node" cx="218" cy="91" r="6"/>
+            <circle class="organ-node" cx="180" cy="141" r="7"/>
+            <text x="118" y="225" fill="#8fb2d8" font-size="13" font-weight="800">HEART / CARDIAC RISK</text>
+        </svg>
+        """
+    if disease == "Liver":
+        return f"""
+        <svg class="organ-svg" viewBox="0 0 360 240" style="--organ-tone:{tone};" role="img" aria-label="Interactive liver organ drawing">
+            <path class="organ-main" d="M45 111 C68 57, 142 43, 224 55 C294 66, 333 98, 313 145 C291 198, 201 186, 154 161 C116 141, 71 163, 50 140 C41 131, 39 122, 45 111 Z"/>
+            <path class="organ-secondary" d="M142 60 C154 100, 153 133, 136 166"/>
+            <path class="organ-secondary" d="M162 112 C201 101, 244 111, 286 137"/>
+            <path class="organ-secondary" d="M95 125 C123 109, 157 109, 184 128"/>
+            <circle class="organ-node" cx="142" cy="103" r="7"/>
+            <circle class="organ-node" cx="210" cy="115" r="6"/>
+            <circle class="organ-node" cx="276" cy="139" r="6"/>
+            <text x="112" y="222" fill="#8fb2d8" font-size="13" font-weight="800">LIVER / ENZYME PATTERN</text>
+        </svg>
+        """
+    return f"""
+    <svg class="organ-svg" viewBox="0 0 360 240" style="--organ-tone:{tone};" role="img" aria-label="Interactive kidney organ drawing">
+        <path class="organ-main" d="M127 41 C77 51, 54 111, 76 158 C91 190, 124 202, 153 184 C175 170, 170 138, 154 122 C139 107, 157 82, 156 63 C155 47, 144 38, 127 41 Z"/>
+        <path class="organ-main" d="M233 41 C283 51, 306 111, 284 158 C269 190, 236 202, 207 184 C185 170, 190 138, 206 122 C221 107, 203 82, 204 63 C205 47, 216 38, 233 41 Z"/>
+        <path class="organ-secondary" d="M180 54 C177 94, 177 128, 180 172"/>
+        <path class="organ-secondary" d="M156 125 C172 128, 178 138, 180 172"/>
+        <path class="organ-secondary" d="M204 125 C188 128, 182 138, 180 172"/>
+        <circle class="organ-node" cx="126" cy="102" r="6"/>
+        <circle class="organ-node" cx="234" cy="102" r="6"/>
+        <circle class="organ-node" cx="180" cy="172" r="7"/>
+        <text x="110" y="225" fill="#8fb2d8" font-size="13" font-weight="800">KIDNEYS / FILTRATION</text>
+    </svg>
+    """
+
+
+def render_organ_visual(disease):
+    data = ORGAN_DATA[disease]
+    st.markdown(
+        f"""
+        <div class="organ-visual-panel">
+            <div class="organ-copy">
+                <h2>{data['organ']} interactive map</h2>
+                <p>
+                    This visual highlights the organ system connected to the selected blood-marker panel.
+                    Hover the drawing to speed up the motion and emphasize the active biological pathways.
+                </p>
+            </div>
+            <div class="organ-svg-wrap">
+                {organ_svg_markup(disease)}
+            </div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -2285,6 +2504,7 @@ if disease not in models:
 
 
 render_context_panel(disease)
+render_organ_visual(disease)
 render_marker_tiles(disease)
 render_disease_intelligence(disease)
 render_input_console(disease)
