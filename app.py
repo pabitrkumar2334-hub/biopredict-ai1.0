@@ -26,6 +26,16 @@ ORGAN_DATA = {
         "summary": "Pancreas and metabolic screening using glucose, insulin, BMI, age, and family-history indicators.",
         "doctor": "Endocrinologist",
         "tests": "HbA1c, fasting glucose, fasting insulin, lipid profile",
+        "signals": [
+            "Type 2 diabetes screening",
+            "Insulin resistance pattern",
+            "High-glucose warning signs",
+        ],
+        "actions": [
+            "Track fasting glucose and HbA1c regularly.",
+            "Review diet, weight, sleep, and physical activity habits.",
+            "Consult a doctor if glucose or BMI stays above range.",
+        ],
     },
     "Heart": {
         "organ": "Heart",
@@ -41,6 +51,16 @@ ORGAN_DATA = {
         "summary": "Cardiac screening using blood pressure, cholesterol, chest-pain pattern, ECG, and exercise-response markers.",
         "doctor": "Cardiologist",
         "tests": "ECG, lipid profile, troponin if symptomatic, echocardiogram",
+        "signals": [
+            "Coronary artery disease screening",
+            "Hypertension-linked cardiac strain",
+            "Cholesterol and exercise-risk pattern",
+        ],
+        "actions": [
+            "Monitor blood pressure and cholesterol trends.",
+            "Seek urgent help for chest pain, breathlessness, or fainting.",
+            "Discuss ECG and lipid follow-up with a physician.",
+        ],
     },
     "Liver": {
         "organ": "Liver",
@@ -56,6 +76,16 @@ ORGAN_DATA = {
         "summary": "Liver screening using bilirubin, liver enzymes, albumin, protein balance, and age indicators.",
         "doctor": "Gastroenterologist / Hepatologist",
         "tests": "LFT, hepatitis panel, ultrasound abdomen, GGT",
+        "signals": [
+            "Fatty liver screening",
+            "Liver inflammation marker pattern",
+            "Bilirubin and protein-balance stress",
+        ],
+        "actions": [
+            "Repeat LFT if enzymes or bilirubin remain high.",
+            "Avoid alcohol and unnecessary liver-stressing medicines.",
+            "Consider ultrasound and hepatitis screening if advised.",
+        ],
     },
     "Kidney": {
         "organ": "Kidneys",
@@ -71,6 +101,16 @@ ORGAN_DATA = {
         "summary": "Kidney screening using creatinine, urea, electrolytes, urine markers, blood count, and blood-pressure signals.",
         "doctor": "Nephrologist",
         "tests": "KFT, urine routine, urine ACR, eGFR, renal ultrasound",
+        "signals": [
+            "Chronic kidney disease screening",
+            "Filtration and waste-clearance pattern",
+            "Electrolyte and urine-marker imbalance",
+        ],
+        "actions": [
+            "Track creatinine, urea, eGFR, and urine protein.",
+            "Control blood pressure and diabetes if present.",
+            "Consult a doctor if swelling, anemia, or abnormal urine persists.",
+        ],
     },
 }
 
@@ -479,6 +519,149 @@ def apply_dashboard_theme():
             margin-top: 4px;
         }
 
+        .intel-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 14px;
+        }
+
+        .intel-card {
+            background: rgba(255,255,255,.045);
+            border: 1px solid rgba(77,163,255,.16);
+            border-radius: 12px;
+            padding: 14px;
+            min-height: 108px;
+        }
+
+        .intel-card span {
+            color: #6fa9dd;
+            display: block;
+            font-size: .78rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .intel-card strong {
+            color: #ffffff;
+            display: block;
+            line-height: 1.32;
+        }
+
+        .result-card {
+            position: relative;
+            overflow: hidden;
+            background:
+                linear-gradient(135deg, rgba(15, 26, 46, .96), rgba(6, 15, 28, .86)),
+                radial-gradient(circle at 85% 18%, rgba(39,231,194,.18), transparent 35%);
+            border: 1px solid rgba(39,231,194,.22);
+            border-radius: 16px;
+            padding: 22px;
+            margin: 4px 0 18px 0;
+            box-shadow: 0 24px 70px rgba(0,0,0,.25);
+        }
+
+        .result-card:after {
+            content: "";
+            position: absolute;
+            left: -45%;
+            top: 0;
+            width: 40%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,.08), transparent);
+            animation: resultScan 3s ease-in-out infinite;
+        }
+
+        .result-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .risk-ring {
+            width: 132px;
+            height: 132px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            background: conic-gradient(var(--risk-color) var(--risk-angle), rgba(255,255,255,.08) 0);
+            box-shadow: 0 0 32px rgba(39,231,194,.14);
+        }
+
+        .risk-ring-inner {
+            width: 102px;
+            height: 102px;
+            border-radius: 50%;
+            background: #07111f;
+            display: grid;
+            place-items: center;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,.08);
+        }
+
+        .risk-ring-inner strong {
+            color: white;
+            font-size: 1.45rem;
+            line-height: 1;
+        }
+
+        .risk-ring-inner span {
+            color: #8fb2d8;
+            font-size: .78rem;
+        }
+
+        .result-title {
+            flex: 1;
+        }
+
+        .result-title span {
+            color: #8fb2d8;
+            font-size: .85rem;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .result-title h2 {
+            margin: 5px 0 8px 0;
+            font-size: 2rem;
+        }
+
+        .result-title p {
+            margin: 0;
+            color: #9fc1e7;
+            line-height: 1.5;
+        }
+
+        .result-actions {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 16px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .mini-action {
+            background: rgba(255,255,255,.045);
+            border: 1px solid rgba(77,163,255,.14);
+            border-radius: 12px;
+            padding: 12px;
+            color: #dcecff;
+        }
+
+        .mini-action span {
+            display: block;
+            color: #6fa9dd;
+            font-size: .76rem;
+            font-weight: 800;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
         @keyframes pulse {
             0%, 100% { transform: scale(.88); opacity: .65; }
             50% { transform: scale(1.12); opacity: 1; }
@@ -504,14 +687,21 @@ def apply_dashboard_theme():
             to { transform: translate(9px, -8px) rotate(16deg); }
         }
 
+        @keyframes resultScan {
+            0% { left: -45%; }
+            55%, 100% { left: 120%; }
+        }
+
         @media (max-width: 900px) {
             .dna-stage { opacity: .3; right: -40px; }
-            .marker-grid, .projection-grid { grid-template-columns: 1fr 1fr; }
+            .marker-grid, .projection-grid, .intel-grid, .result-actions { grid-template-columns: 1fr 1fr; }
+            .result-top { align-items: flex-start; }
         }
 
         @media (max-width: 620px) {
-            .marker-grid, .projection-grid { grid-template-columns: 1fr; }
+            .marker-grid, .projection-grid, .intel-grid, .result-actions { grid-template-columns: 1fr; }
             .hero { min-height: 330px; }
+            .result-top { flex-direction: column; }
         }
         </style>
         """,
@@ -614,6 +804,74 @@ def render_context_panel(disease):
                 <h2 style="margin:0;">{data['organ']} - blood markers</h2>
             </div>
             <p style="color:#9fc1e7;margin-top:0;">{data['summary']}</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_disease_intelligence(disease):
+    data = ORGAN_DATA[disease]
+    signal_cards = []
+    for index, signal in enumerate(data["signals"], start=1):
+        signal_cards.append(
+            f"""
+            <div class="intel-card">
+                <span>Signal {index}</span>
+                <strong>{signal}</strong>
+            </div>
+            """
+        )
+
+    st.markdown(
+        f"""
+        <div class="section-panel">
+            <h2 style="margin-top:0;">Disease Intelligence</h2>
+            <p style="color:#9fc1e7;margin-bottom:0;">
+                This module studies biomarker patterns linked with {data['subtitle'].lower()}.
+                It is designed for early screening and report discussion, not final diagnosis.
+            </p>
+            <div class="intel-grid">{''.join(signal_cards)}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_result_dashboard(disease, risk_level, risk_percent, advice):
+    data = ORGAN_DATA[disease]
+    risk_color = "#27e7c2"
+    if risk_level == "HIGH RISK":
+        risk_color = "#ff5a67"
+    elif risk_level == "MODERATE RISK":
+        risk_color = "#ffb02e"
+
+    action_1, action_2, action_3 = data["actions"]
+    risk_angle = max(0, min(100, risk_percent)) * 3.6
+
+    st.markdown(
+        f"""
+        <div class="result-card" style="--risk-color:{risk_color}; --risk-angle:{risk_angle}deg;">
+            <div class="result-top">
+                <div class="result-title">
+                    <span>{data['organ']} risk assessment</span>
+                    <h2>{risk_level}</h2>
+                    <p>{advice}</p>
+                </div>
+                <div class="risk-ring">
+                    <div class="risk-ring-inner">
+                        <div>
+                            <strong>{risk_percent:.2f}%</strong>
+                            <span>Risk score</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="result-actions">
+                <div class="mini-action"><span>Next step</span>{action_1}</div>
+                <div class="mini-action"><span>Watch point</span>{action_2}</div>
+                <div class="mini-action"><span>Care path</span>{action_3}</div>
+            </div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -901,6 +1159,7 @@ if disease not in models:
 
 render_context_panel(disease)
 render_marker_tiles(disease)
+render_disease_intelligence(disease)
 
 
 if disease == "Diabetes":
@@ -1052,13 +1311,7 @@ if st.button(f"Analyse & predict {disease} risk", use_container_width=True):
 
     st.markdown("---")
     st.header("Prediction Result")
-    col1, col2 = st.columns([1, 1.2])
-    with col1:
-        st.metric("Risk Level", risk_level)
-        st.metric("Risk Score", f"{risk_percent:.2f}%")
-    with col2:
-        st.progress(int(min(100, max(0, risk_percent))))
-        st.info(f"ðŸ’¡ {advice}")
+    render_result_dashboard(disease, risk_level, risk_percent, advice)
 
     render_projection(disease, risk_percent)
 
