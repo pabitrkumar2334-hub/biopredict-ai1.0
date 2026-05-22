@@ -812,17 +812,6 @@ def render_context_panel(disease):
 
 def render_disease_intelligence(disease):
     data = ORGAN_DATA[disease]
-    signal_cards = []
-    for index, signal in enumerate(data["signals"], start=1):
-        signal_cards.append(
-            f"""
-            <div class="intel-card">
-                <span>Signal {index}</span>
-                <strong>{signal}</strong>
-            </div>
-            """
-        )
-
     st.markdown(
         f"""
         <div class="section-panel">
@@ -831,11 +820,22 @@ def render_disease_intelligence(disease):
                 This module studies biomarker patterns linked with {data['subtitle'].lower()}.
                 It is designed for early screening and report discussion, not final diagnosis.
             </p>
-            <div class="intel-grid">{''.join(signal_cards)}</div>
         </div>
         """,
         unsafe_allow_html=True,
     )
+    cols = st.columns(3)
+    for index, signal in enumerate(data["signals"], start=1):
+        with cols[index - 1]:
+            st.markdown(
+                f"""
+                <div class="intel-card">
+                    <span>Signal {index}</span>
+                    <strong>{signal}</strong>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
 
 def render_result_dashboard(disease, risk_level, risk_percent, advice):
