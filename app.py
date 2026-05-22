@@ -2224,30 +2224,6 @@ def disease_pattern_cards(disease, input_values, report_values, model_risk):
 
 def render_specific_disease_patterns(disease, input_values, report_values, model_risk):
     cards = disease_pattern_cards(disease, input_values, report_values, model_risk)
-    html_cards = []
-    for card in cards:
-        current = card["Current Risk"]
-        future = card["Future Risk"]
-        html_cards.append(
-            f"""
-            <div class="disease-risk-card">
-                <h3>{card['Disease']}</h3>
-                <p>{card['Pattern']}</p>
-                <div class="risk-row">
-                    <div class="risk-mini">
-                        <span>Current screening risk</span>
-                        <strong>{current:.1f}%</strong>
-                        <div class="risk-meter"><div class="risk-fill" style="width:{current}%;"></div></div>
-                    </div>
-                    <div class="risk-mini">
-                        <span>Future watch risk</span>
-                        <strong>{future:.1f}%</strong>
-                        <div class="risk-meter"><div class="risk-fill" style="width:{future}%;"></div></div>
-                    </div>
-                </div>
-            </div>
-            """
-        )
 
     st.markdown(
         f"""
@@ -2257,11 +2233,38 @@ def render_specific_disease_patterns(disease, input_values, report_values, model
                 These cards show practical disease patterns that can be estimated from available blood-report
                 markers for the {ORGAN_DATA[disease]['organ'].lower()}. They are screening estimates, not diagnosis.
             </p>
-            <div class="disease-risk-grid">{''.join(html_cards)}</div>
         </div>
         """,
         unsafe_allow_html=True,
     )
+
+    for start in range(0, len(cards), 2):
+        cols = st.columns(2)
+        for offset, card in enumerate(cards[start : start + 2]):
+            current = card["Current Risk"]
+            future = card["Future Risk"]
+            with cols[offset]:
+                st.markdown(
+                    f"""
+                    <div class="disease-risk-card">
+                        <h3>{card['Disease']}</h3>
+                        <p>{card['Pattern']}</p>
+                        <div class="risk-row">
+                            <div class="risk-mini">
+                                <span>Current screening risk</span>
+                                <strong>{current:.1f}%</strong>
+                                <div class="risk-meter"><div class="risk-fill" style="width:{current}%;"></div></div>
+                            </div>
+                            <div class="risk-mini">
+                                <span>Future watch risk</span>
+                                <strong>{future:.1f}%</strong>
+                                <div class="risk-meter"><div class="risk-fill" style="width:{future}%;"></div></div>
+                            </div>
+                        </div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
 
 
 apply_dashboard_theme()
