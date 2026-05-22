@@ -1219,8 +1219,8 @@ def generate_pdf(disease, input_values, risk_level, risk_percent, advice, rows):
     pdf.set_font("Helvetica", "", 10)
     pdf.set_text_color(70, 82, 96)
     for action in data["actions"]:
-        pdf.cell(5)
-        pdf.multi_cell(0, 6, f"- {action}")
+        pdf.set_x(15)
+        pdf.multi_cell(180, 6, f"- {action}")
 
     pdf.ln(4)
     pdf.set_font("Helvetica", "I", 9)
