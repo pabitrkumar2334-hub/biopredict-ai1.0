@@ -1146,6 +1146,11 @@ def looks_like_result_context(text):
 
 
 def find_marker_value(text, labels):
+    detail = find_marker_detail(text, labels)
+    return detail["value"] if detail else None
+
+
+def find_marker_detail(text, labels):
     lines = text.splitlines() if "\n" in text else [text]
     for label in labels:
         for index, line in enumerate(lines):
@@ -1154,7 +1159,12 @@ def find_marker_value(text, labels):
                     if line_has_label(result_line, label) and looks_like_result_context(result_line):
                         numbers = numeric_candidates(result_line)
                         if numbers:
-                            return numbers[-1]
+                            return {
+                                "value": numbers[-1],
+                                "label": label,
+                                "source": result_line[:160],
+                                "confidence": "High",
+                            }
 
                 split_result_labels = ["hba1c", "glycated hemoglobin", "glycosylated hemoglobin"]
                 if label.lower() in split_result_labels:
@@ -1162,12 +1172,23 @@ def find_marker_value(text, labels):
                         if looks_like_result_context(result_line):
                             numbers = numeric_candidates(result_line)
                             if numbers:
-                                return numbers[-1]
+                                return {
+                                    "value": numbers[-1],
+                                    "label": label,
+                                    "source": f"{line[:70]} ... {result_line[:90]}",
+                                    "confidence": "Medium",
+                                }
 
                 if (looks_like_result_context(line) or not looks_like_prose(line)) and not looks_like_range_only(line):
                     value = choose_best_number(line, label)
                     if value is not None:
-                        return value
+                        confidence = "High" if looks_like_result_context(line) else "Medium"
+                        return {
+                            "value": value,
+                            "label": label,
+                            "source": line[:160],
+                            "confidence": confidence,
+                        }
 
     return None
 
@@ -1253,28 +1274,142 @@ REPORT_MARKERS = {
 }
 
 
+FIELD_DISPLAY_NAMES = {
+    "age": "Age",
+    "gender_label": "Gender",
+    "gender_binary": "Gender code",
+    "pregnancies": "Pregnancies",
+    "glucose": "Fasting glucose",
+    "hba1c": "HbA1c",
+    "bp": "Blood pressure",
+    "skin": "Skin thickness",
+    "insulin": "Insulin",
+    "bmi": "BMI",
+    "dpf": "Diabetes pedigree function",
+    "trestbps": "Resting blood pressure",
+    "chol": "Total cholesterol",
+    "thalach": "Max heart rate",
+    "oldpeak": "ST depression",
+    "fbs_value": "Fasting blood sugar",
+    "fbs": "FBS > 120 flag",
+    "total_bili": "Total bilirubin",
+    "direct_bili": "Direct bilirubin",
+    "alk_phos": "Alkaline phosphatase",
+    "alt": "ALT / SGPT",
+    "ast": "AST / SGOT",
+    "total_prot": "Total protein",
+    "albumin": "Albumin",
+    "ag_ratio": "A/G ratio",
+    "sg": "Specific gravity",
+    "al": "Urine albumin",
+    "su": "Urine sugar",
+    "bgr": "Random blood glucose",
+    "bu": "Blood urea / BUN",
+    "sc": "Serum creatinine",
+    "sod": "Sodium",
+    "pot": "Potassium",
+    "hemo": "Hemoglobin",
+    "pcv": "Packed cell volume",
+    "wc": "WBC count",
+    "rc": "RBC count",
+}
+
+
+FIELD_TO_MODEL_PARAM = {
+    "Diabetes": {
+        "glucose": "Glucose",
+        "bp": "BloodPressure",
+        "skin": "SkinThickness",
+        "insulin": "Insulin",
+        "bmi": "BMI",
+        "dpf": "DiabetesPedigreeFunction",
+        "age": "Age",
+        "pregnancies": "Pregnancies",
+    },
+    "Heart": {
+        "age": "age",
+        "trestbps": "trestbps",
+        "chol": "chol",
+        "thalach": "thalach",
+        "oldpeak": "oldpeak",
+    },
+    "Liver": {
+        "age": "Age",
+        "total_bili": "Total_Bilirubin",
+        "direct_bili": "Direct_Bilirubin",
+        "alk_phos": "Alkaline_Phosphotase",
+        "alt": "Alamine_Aminotransferase",
+        "ast": "Aspartate_Aminotransferase",
+        "total_prot": "Total_Protiens",
+        "albumin": "Albumin",
+        "ag_ratio": "Albumin_and_Globulin_Ratio",
+    },
+    "Kidney": {
+        "age": "age",
+        "bp": "bp",
+        "sg": "sg",
+        "al": "al",
+        "su": "su",
+        "bgr": "bgr",
+        "bu": "bu",
+        "sc": "sc",
+        "sod": "sod",
+        "pot": "pot",
+        "hemo": "hemo",
+        "pcv": "pcv",
+        "wc": "wc",
+        "rc": "rc",
+    },
+}
+
+
 def parse_report_values(text, disease):
+    details = parse_report_details(text, disease)
+    return {field: detail["value"] for field, detail in details.items()}
+
+
+def parse_report_details(text, disease):
     values = {}
     if not text:
         return values
     age = find_age(text)
     if age is not None:
-        values["age"] = age
+        values["age"] = {
+            "value": age,
+            "label": "Age/Sex",
+            "source": "Patient information header",
+            "confidence": "High",
+        }
 
     gender_label = find_gender_label(text)
     if gender_label is not None:
-        values["gender_label"] = gender_label
-        values["gender_binary"] = 1 if gender_label == "Male" else 0
+        values["gender_label"] = {
+            "value": gender_label,
+            "label": "Sex/Gender",
+            "source": "Patient information header",
+            "confidence": "High",
+        }
+        values["gender_binary"] = {
+            "value": 1 if gender_label == "Male" else 0,
+            "label": "Sex/Gender",
+            "source": "Patient information header",
+            "confidence": "High",
+        }
 
     for field, labels in REPORT_MARKERS[disease].items():
         if field == "age" and "age" in values:
             continue
-        value = find_marker_value(text, labels)
-        if value is not None:
-            values[field] = value
+        detail = find_marker_detail(text, labels)
+        if detail is not None:
+            values[field] = detail
 
     if disease == "Heart" and "fbs_value" in values:
-        values["fbs"] = 1 if get_float(values["fbs_value"]) > 120 else 0
+        values["fbs"] = {
+            "value": 1 if get_float(values["fbs_value"]["value"]) > 120 else 0,
+            "label": "Derived from FBS",
+            "source": f"FBS value {values['fbs_value']['value']}",
+            "confidence": values["fbs_value"]["confidence"],
+        }
     return values
 
 
@@ -1299,15 +1434,27 @@ def render_report_upload(disease):
     )
 
     report_text, report_id = extract_pdf_text(uploaded_file)
-    extracted_values = parse_report_values(report_text, disease)
+    module_details = {}
+    if report_text:
+        module_details = {
+            module: parse_report_details(report_text, module)
+            for module in ["Diabetes", "Heart", "Liver", "Kidney"]
+        }
+    extracted_details = module_details.get(disease, {})
+    extracted_values = {field: detail["value"] for field, detail in extracted_details.items()}
 
     if uploaded_file is not None:
-        if extracted_values:
-            st.success(f"Found {len(extracted_values)} values in the PDF. Please review them below before prediction.")
-            pills = []
-            for key, value in extracted_values.items():
-                pills.append(f'<div class="extract-pill"><b>{key}</b>: {value}</div>')
-            st.markdown(f'<div class="extraction-list">{"".join(pills)}</div>', unsafe_allow_html=True)
+        any_values = any(details for details in module_details.values())
+        if any_values:
+            st.success("The report was read successfully. Review the detected modules and extracted values below.")
+            render_module_detection(module_details)
+            if extracted_values:
+                render_extraction_review(disease, extracted_details)
+            else:
+                st.warning(
+                    f"The report contains readable values, but I did not find strong matches for the {disease} module. "
+                    "Try another organ module from the sidebar or enter values manually."
+                )
         else:
             st.warning(
                 "I could not confidently find matching values in this PDF. "
@@ -1317,6 +1464,93 @@ def render_report_upload(disease):
                 st.write(report_text[:2500] if report_text else "No readable text found.")
 
     return extracted_values, report_id
+
+
+def render_module_detection(module_details):
+    rows = []
+    for module, details in module_details.items():
+        model_fields = set(FIELD_TO_MODEL_PARAM[module].keys())
+        found_model_fields = model_fields.intersection(details.keys())
+        coverage = round((len(found_model_fields) / max(1, len(model_fields))) * 100)
+        status = "Ready" if coverage >= 45 else "Partial" if coverage > 0 else "Missing"
+        rows.append(
+            {
+                "Module": module,
+                "Extracted values": len(details),
+                "Model fields found": f"{len(found_model_fields)} / {len(model_fields)}",
+                "Coverage": f"{coverage}%",
+                "Status": status,
+            }
+        )
+    st.subheader("Auto-detected disease modules")
+    st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+
+
+def render_extraction_review(disease, extracted_details):
+    rows = []
+    model_fields = set(FIELD_TO_MODEL_PARAM[disease].keys())
+    for field, detail in extracted_details.items():
+        rows.append(
+            {
+                "Marker": FIELD_DISPLAY_NAMES.get(field, field),
+                "Value": detail["value"],
+                "Source label": detail["label"],
+                "Confidence": detail["confidence"],
+                "Used in model": "Yes" if field in model_fields or field in ["gender_binary"] else "Reference only",
+            }
+        )
+    if rows:
+        st.subheader("Extracted-value review")
+        st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+
+
+def classify_marker(model_param, raw_value):
+    if model_param not in normal_ranges:
+        return "Reference", "No reference range in app"
+    try:
+        value = float(raw_value)
+    except Exception:
+        return "Reference", "Non-numeric value"
+    low, high = normal_ranges[model_param]
+    if value < low:
+        return "Below normal", f"{value:g} is below {low:g}-{high:g}"
+    if value > high:
+        return "Above normal", f"{value:g} is above {low:g}-{high:g}"
+    return "Normal", f"{value:g} is within {low:g}-{high:g}"
+
+
+def render_report_summary(disease, report_values):
+    if not report_values:
+        return
+
+    mapped = FIELD_TO_MODEL_PARAM[disease]
+    found = []
+    abnormal = []
+    normal = []
+
+    for field, model_param in mapped.items():
+        if field not in report_values:
+            continue
+        status, note = classify_marker(model_param, report_values[field])
+        found.append(FIELD_DISPLAY_NAMES.get(field, field))
+        if status in ["Above normal", "Below normal"]:
+            abnormal.append(f"{FIELD_DISPLAY_NAMES.get(field, field)}: {note}")
+        elif status == "Normal":
+            normal.append(FIELD_DISPLAY_NAMES.get(field, field))
+
+    if not found:
+        return
+
+    st.subheader("AI Report Summary")
+    if abnormal:
+        st.warning("Key attention points: " + " | ".join(abnormal[:4]))
+    else:
+        st.success("The extracted model markers are mostly within the app's reference ranges.")
+
+    st.info(
+        f"Detected {len(found)} usable {disease} markers from the uploaded PDF. "
+        "Review and correct the auto-filled fields before running prediction."
+    )
 
 
 def autofill(report_values, field, fallback):
@@ -1655,6 +1889,48 @@ def render_projection(disease, risk_percent):
     )
 
 
+def render_clinical_explanation(disease, rows, risk_level, risk_percent):
+    data = ORGAN_DATA[disease]
+    abnormal_rows = [
+        row for row in rows
+        if "Above" in row["Status"] or "Below" in row["Status"]
+    ]
+    if abnormal_rows:
+        marker_text = ", ".join(
+            f"{row['Parameter']} ({row['Your Value']})" for row in abnormal_rows[:5]
+        )
+    else:
+        marker_text = "No major extracted numeric markers are outside the app's reference ranges."
+
+    if risk_level == "HIGH RISK":
+        tone = "This result should be treated as a priority screening alert."
+    elif risk_level == "MODERATE RISK":
+        tone = "This result suggests a watch zone where follow-up and trend monitoring are useful."
+    else:
+        tone = "This result is reassuring, but it should still be interpreted with symptoms and medical history."
+
+    st.markdown(
+        f"""
+        <div class="section-panel">
+            <h2 style="margin-top:0;">Clinical Explanation</h2>
+            <p style="color:#9fc1e7;">
+                The {data['organ'].lower()} model produced a <b style="color:white;">{risk_percent:.2f}%</b>
+                screening score, categorized as <b style="color:white;">{risk_level}</b>.
+                {tone}
+            </p>
+            <p style="color:#9fc1e7;">
+                Main markers to review: <b style="color:white;">{marker_text}</b>
+            </p>
+            <p style="color:#9fc1e7;margin-bottom:0;">
+                Suggested follow-up: discuss the report with a <b style="color:white;">{data['doctor']}</b>
+                and consider: <b style="color:white;">{data['tests']}</b>.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 apply_dashboard_theme()
 render_hero()
 
@@ -1677,6 +1953,7 @@ render_marker_tiles(disease)
 render_disease_intelligence(disease)
 render_input_console(disease)
 report_values, report_id = render_report_upload(disease)
+render_report_summary(disease, report_values)
 
 
 if disease == "Diabetes":
@@ -1858,6 +2135,7 @@ if st.button(f"Analyse & predict {disease} risk", use_container_width=True):
     render_result_dashboard(disease, risk_level, risk_percent, advice)
 
     render_projection(disease, risk_percent)
+    render_clinical_explanation(disease, rows, risk_level, risk_percent)
 
     st.markdown("---")
     st.header("Graphical Biomarker Comparison")
