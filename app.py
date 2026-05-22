@@ -174,6 +174,31 @@ def apply_dashboard_theme():
             color: #ffffff !important;
         }
 
+        div[data-testid="stTextInput"],
+        div[data-testid="stSelectbox"] {
+            background: rgba(255,255,255,.035);
+            border: 1px solid rgba(77,163,255,.12);
+            border-radius: 12px;
+            padding: 10px 12px 12px 12px;
+            margin-bottom: 8px;
+            transition: border-color .18s ease, background .18s ease, transform .18s ease;
+        }
+
+        div[data-testid="stTextInput"]:hover,
+        div[data-testid="stSelectbox"]:hover {
+            border-color: rgba(39,231,194,.34);
+            background: rgba(39,231,194,.045);
+            transform: translateY(-1px);
+        }
+
+        div[data-testid="stTextInput"] label,
+        div[data-testid="stSelectbox"] label {
+            color: #7fb9ef !important;
+            font-weight: 800 !important;
+            text-transform: uppercase;
+            font-size: .78rem;
+        }
+
         .stButton > button,
         .stDownloadButton > button {
             background: linear-gradient(90deg, #27e7c2, #4da3ff) !important;
@@ -517,6 +542,55 @@ def apply_dashboard_theme():
             display: block;
             font-size: 1.35rem;
             margin-top: 4px;
+        }
+
+        .input-console {
+            background:
+                linear-gradient(135deg, rgba(15,26,46,.94), rgba(6,15,28,.82)),
+                radial-gradient(circle at 88% 22%, rgba(77,163,255,.12), transparent 34%);
+            border: 1px solid rgba(77,163,255,.18);
+            border-radius: 16px;
+            padding: 18px;
+            margin: 16px 0 18px 0;
+            box-shadow: 0 18px 55px rgba(0,0,0,.18);
+        }
+
+        .input-console-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 18px;
+        }
+
+        .input-console h2 {
+            margin: 0 0 8px 0;
+        }
+
+        .input-console p {
+            color: #9fc1e7;
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        .console-chip-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        .console-chip {
+            background: rgba(255,255,255,.045);
+            border: 1px solid rgba(77,163,255,.16);
+            border-radius: 999px;
+            padding: 7px 12px;
+            color: #cfe6ff;
+            font-size: .84rem;
+            font-weight: 750;
+        }
+
+        .console-chip b {
+            color: #69f4d8;
         }
 
         .intel-grid {
@@ -878,6 +952,32 @@ def render_result_dashboard(disease, risk_level, risk_percent, advice):
     )
 
 
+def render_input_console(disease):
+    data = ORGAN_DATA[disease]
+    marker_names = ", ".join(marker[0] for marker in data["markers"])
+    st.markdown(
+        f"""
+        <div class="input-console">
+            <div class="input-console-top">
+                <div>
+                    <h2>Blood Report Input Console</h2>
+                    <p>
+                        Enter the available values from your report. The model will analyze the
+                        {data['organ'].lower()} marker pattern and compare numeric values with common reference ranges.
+                    </p>
+                </div>
+            </div>
+            <div class="console-chip-row">
+                <div class="console-chip"><b>Model:</b> {disease} risk</div>
+                <div class="console-chip"><b>Key markers:</b> {marker_names}</div>
+                <div class="console-chip"><b>Output:</b> risk score, graph, table, PDF</div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 @st.cache_resource
 def load_models():
     models = {}
@@ -1160,6 +1260,7 @@ if disease not in models:
 render_context_panel(disease)
 render_marker_tiles(disease)
 render_disease_intelligence(disease)
+render_input_console(disease)
 
 
 if disease == "Diabetes":
