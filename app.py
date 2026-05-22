@@ -9,6 +9,174 @@ import tempfile
 from datetime import datetime
 
 st.set_page_config(page_title="BioPredict AI", page_icon="🏥", layout="wide")
+def apply_biotech_theme():
+    st.markdown("""
+    <style>
+    .stApp {
+        background:
+            radial-gradient(circle at 20% 20%, rgba(0, 255, 213, 0.12), transparent 28%),
+            radial-gradient(circle at 80% 10%, rgba(92, 70, 255, 0.16), transparent 30%),
+            linear-gradient(135deg, #050816 0%, #07111f 45%, #02040a 100%);
+        color: #f5f7fb;
+    }
+
+    section[data-testid="stSidebar"] {
+        background: linear-gradient(180deg, rgba(9, 18, 35, 0.98), rgba(4, 8, 18, 0.98));
+        border-right: 1px solid rgba(0, 255, 213, 0.18);
+    }
+
+    h1, h2, h3 {
+        letter-spacing: 0px;
+        color: #ffffff;
+    }
+
+    div[data-testid="stMetric"] {
+        background: rgba(12, 22, 42, 0.72);
+        border: 1px solid rgba(0, 255, 213, 0.22);
+        border-radius: 14px;
+        padding: 18px;
+        box-shadow: 0 0 28px rgba(0, 255, 213, 0.08);
+        animation: cardFloat 4s ease-in-out infinite;
+    }
+
+    .stButton > button, .stDownloadButton > button {
+        background: linear-gradient(90deg, #00f5d4, #5b6cff);
+        color: #02040a;
+        border: none;
+        border-radius: 12px;
+        font-weight: 800;
+        padding: 0.8rem 1rem;
+        box-shadow: 0 0 24px rgba(0, 245, 212, 0.28);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .stButton > button:hover, .stDownloadButton > button:hover {
+        transform: translateY(-2px) scale(1.01);
+        box-shadow: 0 0 34px rgba(0, 245, 212, 0.48);
+    }
+
+    input, textarea, div[data-baseweb="select"] > div {
+        border-radius: 12px !important;
+        border: 1px solid rgba(0, 255, 213, 0.16) !important;
+    }
+
+    .bio-hero {
+        position: relative;
+        overflow: hidden;
+        border: 1px solid rgba(0, 255, 213, 0.22);
+        border-radius: 22px;
+        padding: 34px 34px;
+        margin-bottom: 28px;
+        background:
+            linear-gradient(120deg, rgba(10, 22, 44, 0.88), rgba(7, 10, 24, 0.82)),
+            radial-gradient(circle at 80% 50%, rgba(0, 245, 212, 0.18), transparent 35%);
+        box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+    }
+
+    .bio-hero h1 {
+        font-size: 3rem;
+        margin: 0;
+        background: linear-gradient(90deg, #ffffff, #80fff1, #aab4ff);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .bio-hero p {
+        color: #b8c7e6;
+        font-size: 1.05rem;
+        max-width: 680px;
+    }
+
+    .dna-wrap {
+        position: absolute;
+        right: 42px;
+        top: 20px;
+        width: 170px;
+        height: 170px;
+        opacity: 0.95;
+        animation: slowSpin 18s linear infinite;
+    }
+
+    .dna-line {
+        position: absolute;
+        left: 50%;
+        width: 4px;
+        height: 170px;
+        background: linear-gradient(#00f5d4, #5b6cff);
+        border-radius: 999px;
+        box-shadow: 0 0 18px rgba(0, 245, 212, 0.8);
+    }
+
+    .dna-line.one { transform: rotate(24deg); }
+    .dna-line.two { transform: rotate(-24deg); }
+
+    .dna-dot {
+        position: absolute;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: #00f5d4;
+        box-shadow: 0 0 18px #00f5d4;
+        animation: pulseDot 1.8s ease-in-out infinite;
+    }
+
+    .dna-dot.d1 { top: 18px; left: 44px; }
+    .dna-dot.d2 { top: 48px; right: 38px; animation-delay: .2s; }
+    .dna-dot.d3 { top: 82px; left: 34px; animation-delay: .4s; }
+    .dna-dot.d4 { top: 116px; right: 46px; animation-delay: .6s; }
+    .dna-dot.d5 { top: 145px; left: 60px; animation-delay: .8s; }
+
+    .scan-line {
+        height: 2px;
+        width: 100%;
+        background: linear-gradient(90deg, transparent, #00f5d4, transparent);
+        animation: scanMove 2.8s ease-in-out infinite;
+        opacity: 0.75;
+        margin-top: 22px;
+    }
+
+    @keyframes slowSpin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+
+    @keyframes pulseDot {
+        0%, 100% { transform: scale(0.85); opacity: 0.65; }
+        50% { transform: scale(1.25); opacity: 1; }
+    }
+
+    @keyframes scanMove {
+        0% { transform: translateX(-100%); }
+        50% { transform: translateX(0%); }
+        100% { transform: translateX(100%); }
+    }
+
+    @keyframes cardFloat {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-4px); }
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+def render_biotech_hero():
+    st.markdown("""
+    <div class="bio-hero">
+        <div class="dna-wrap">
+            <div class="dna-line one"></div>
+            <div class="dna-line two"></div>
+            <div class="dna-dot d1"></div>
+            <div class="dna-dot d2"></div>
+            <div class="dna-dot d3"></div>
+            <div class="dna-dot d4"></div>
+            <div class="dna-dot d5"></div>
+        </div>
+        <h1>BioPredict AI</h1>
+        <p>AI-powered early disease risk prediction from blood reports, with organ-based analysis, biomarker comparison, risk scoring, and downloadable medical screening reports.</p>
+        <div class="scan-line"></div>
+    </div>
+    """, unsafe_allow_html=True)
+
+apply_biotech_theme()
 
 @st.cache_resource
 def load_models():
@@ -149,9 +317,8 @@ def generate_pdf(disease, input_values, risk_level, risk_percent, advice, rows):
     return tmp.name
 
 # Header
-st.title("🏥 BioPredict AI")
-st.subheader("Early Disease Risk Prediction from Blood Reports")
-st.markdown("---")
+
+render_biotech_hero()
 
 disease = st.sidebar.selectbox("Select Disease to Predict",
     ["Diabetes", "Heart", "Liver", "Kidney"])
