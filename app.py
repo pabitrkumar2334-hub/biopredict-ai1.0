@@ -786,6 +786,75 @@ def apply_dashboard_theme():
             text-transform: uppercase;
         }
 
+        .disease-risk-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 14px;
+            margin-top: 14px;
+        }
+
+        .disease-risk-card {
+            background:
+                linear-gradient(135deg, rgba(15,26,46,.94), rgba(6,15,28,.82)),
+                rgba(255,255,255,.035);
+            border: 1px solid rgba(77,163,255,.18);
+            border-radius: 14px;
+            padding: 16px;
+            box-shadow: 0 16px 42px rgba(0,0,0,.14);
+        }
+
+        .disease-risk-card h3 {
+            margin: 0 0 8px 0;
+            font-size: 1.05rem;
+        }
+
+        .disease-risk-card p {
+            color: #9fc1e7;
+            line-height: 1.45;
+            margin: 0 0 12px 0;
+            font-size: .92rem;
+        }
+
+        .risk-meter {
+            height: 8px;
+            border-radius: 999px;
+            background: rgba(255,255,255,.08);
+            overflow: hidden;
+            margin: 7px 0 10px 0;
+        }
+
+        .risk-fill {
+            height: 100%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #27e7c2, #ffb02e, #ff5a67);
+        }
+
+        .risk-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .risk-mini {
+            background: rgba(255,255,255,.045);
+            border: 1px solid rgba(77,163,255,.14);
+            border-radius: 10px;
+            padding: 9px;
+        }
+
+        .risk-mini span {
+            display: block;
+            color: #6fa9dd;
+            font-size: .72rem;
+            font-weight: 850;
+            text-transform: uppercase;
+        }
+
+        .risk-mini strong {
+            color: #ffffff;
+            font-size: 1.05rem;
+        }
+
         @keyframes pulse {
             0%, 100% { transform: scale(.88); opacity: .65; }
             50% { transform: scale(1.12); opacity: 1; }
@@ -818,12 +887,12 @@ def apply_dashboard_theme():
 
         @media (max-width: 900px) {
             .dna-stage { opacity: .3; right: -40px; }
-            .marker-grid, .projection-grid, .intel-grid, .result-actions, .extraction-list { grid-template-columns: 1fr 1fr; }
+            .marker-grid, .projection-grid, .intel-grid, .result-actions, .extraction-list, .disease-risk-grid { grid-template-columns: 1fr 1fr; }
             .result-top { align-items: flex-start; }
         }
 
         @media (max-width: 620px) {
-            .marker-grid, .projection-grid, .intel-grid, .result-actions, .extraction-list { grid-template-columns: 1fr; }
+            .marker-grid, .projection-grid, .intel-grid, .result-actions, .extraction-list, .disease-risk-grid { grid-template-columns: 1fr; }
             .hero { min-height: 330px; }
             .result-top { flex-direction: column; }
         }
@@ -1931,6 +2000,270 @@ def render_clinical_explanation(disease, rows, risk_level, risk_percent):
     )
 
 
+def safe_float_value(value):
+    try:
+        return float(value)
+    except Exception:
+        return None
+
+
+def merged_biomarkers(input_values, report_values):
+    values = {}
+    for key, value in input_values.items():
+        values[key] = value
+    for key, value in report_values.items():
+        values[key] = value
+    return values
+
+
+def value_from(values, *keys):
+    for key in keys:
+        if key in values:
+            numeric = safe_float_value(values[key])
+            if numeric is not None:
+                return numeric
+    return None
+
+
+def clamp_score(value):
+    return round(max(0, min(99, value)), 1)
+
+
+def high_marker_score(value, normal_high, warning_high=None):
+    if value is None:
+        return 18
+    if warning_high is None:
+        warning_high = normal_high * 1.25
+    if value <= normal_high:
+        return 18
+    if value >= warning_high:
+        return 82
+    return 35 + ((value - normal_high) / max(1, warning_high - normal_high)) * 42
+
+
+def low_marker_score(value, normal_low, warning_low=None):
+    if value is None:
+        return 18
+    if warning_low is None:
+        warning_low = normal_low * 0.75
+    if value >= normal_low:
+        return 18
+    if value <= warning_low:
+        return 82
+    return 35 + ((normal_low - value) / max(1, normal_low - warning_low)) * 42
+
+
+def combine_scores(*scores):
+    usable = [score for score in scores if score is not None]
+    if not usable:
+        return 20
+    return sum(usable) / len(usable)
+
+
+def future_watch_score(current, *risk_modifiers):
+    modifier = sum([m for m in risk_modifiers if m is not None])
+    return clamp_score(current + modifier)
+
+
+def disease_pattern_cards(disease, input_values, report_values, model_risk):
+    values = merged_biomarkers(input_values, report_values)
+    age = value_from(values, "Age", "age")
+    bmi = value_from(values, "BMI", "bmi")
+    glucose = value_from(values, "Glucose", "glucose", "bgr")
+    hba1c = value_from(values, "hba1c")
+    insulin = value_from(values, "Insulin", "insulin")
+    bp = value_from(values, "BloodPressure", "bp", "trestbps")
+    chol = value_from(values, "chol")
+    fbs_flag = value_from(values, "fbs")
+    oldpeak = value_from(values, "oldpeak")
+    thalach = value_from(values, "thalach")
+    total_bili = value_from(values, "Total_Bilirubin", "total_bili")
+    direct_bili = value_from(values, "Direct_Bilirubin", "direct_bili")
+    alt = value_from(values, "Alamine_Aminotransferase", "alt")
+    ast = value_from(values, "Aspartate_Aminotransferase", "ast")
+    albumin = value_from(values, "Albumin", "albumin")
+    total_prot = value_from(values, "Total_Protiens", "total_prot")
+    creatinine = value_from(values, "sc")
+    urea = value_from(values, "bu")
+    sodium = value_from(values, "sod")
+    potassium = value_from(values, "pot")
+    hemo = value_from(values, "hemo")
+    wbc = value_from(values, "wc")
+    rbc = value_from(values, "rc")
+    pcv = value_from(values, "pcv")
+
+    cards = []
+
+    if disease == "Diabetes":
+        type2 = combine_scores(
+            high_marker_score(glucose, 125, 180),
+            high_marker_score(hba1c, 6.4, 8.5),
+            high_marker_score(bmi, 29.9, 40),
+            model_risk,
+        )
+        prediabetes = combine_scores(
+            65 if glucose is not None and 100 <= glucose <= 125 else high_marker_score(glucose, 99, 140),
+            65 if hba1c is not None and 5.7 <= hba1c <= 6.4 else high_marker_score(hba1c, 5.6, 7),
+            high_marker_score(bmi, 24.9, 32),
+        )
+        resistance = combine_scores(
+            high_marker_score(insulin, 166, 250),
+            high_marker_score(bmi, 27, 36),
+            high_marker_score(glucose, 110, 160),
+        )
+        metabolic = combine_scores(
+            high_marker_score(bmi, 24.9, 35),
+            high_marker_score(glucose, 110, 160),
+            high_marker_score(age, 45, 70),
+        )
+        cards = [
+            ("Type 2 Diabetes", "Fasting glucose, HbA1c, BMI, age and model probability.", type2),
+            ("Prediabetes Pattern", "Borderline glucose or HbA1c with metabolic markers.", prediabetes),
+            ("Insulin Resistance", "Insulin, glucose and BMI pattern suggesting reduced insulin sensitivity.", resistance),
+            ("Metabolic Syndrome Watch", "Combined glucose, BMI and age-related metabolic stress.", metabolic),
+        ]
+    elif disease == "Heart":
+        cad = combine_scores(
+            high_marker_score(chol, 200, 260),
+            high_marker_score(oldpeak, 2, 4),
+            low_marker_score(thalach, 100, 70),
+            model_risk,
+        )
+        hypertension = combine_scores(
+            high_marker_score(bp, 120, 160),
+            high_marker_score(age, 50, 75),
+        )
+        dyslipidemia = combine_scores(
+            high_marker_score(chol, 200, 260),
+        )
+        diabetic_cardiac = combine_scores(
+            70 if fbs_flag == 1 else 20,
+            high_marker_score(glucose, 125, 180),
+            high_marker_score(chol, 200, 260),
+        )
+        cards = [
+            ("Coronary Artery Disease Pattern", "Cholesterol, ST depression, heart-rate response and ML score.", cad),
+            ("Hypertension-Linked Risk", "Resting blood pressure and age-related cardiovascular load.", hypertension),
+            ("Dyslipidemia Pattern", "Total cholesterol pattern linked with plaque and vessel risk.", dyslipidemia),
+            ("Diabetic Cardiac Risk", "Fasting sugar plus cholesterol markers that raise heart risk.", diabetic_cardiac),
+        ]
+    elif disease == "Liver":
+        fatty = combine_scores(
+            high_marker_score(alt, 56, 100),
+            high_marker_score(ast, 40, 90),
+            high_marker_score(glucose, 125, 180),
+            high_marker_score(bmi, 27, 36),
+            model_risk,
+        )
+        inflammation = combine_scores(
+            high_marker_score(alt, 56, 120),
+            high_marker_score(ast, 40, 100),
+        )
+        bilirubin = combine_scores(
+            high_marker_score(total_bili, 1.2, 3),
+            high_marker_score(direct_bili, 0.3, 1),
+        )
+        synthetic = combine_scores(
+            low_marker_score(albumin, 3.5, 2.5),
+            low_marker_score(total_prot, 6, 4.5),
+        )
+        cards = [
+            ("Fatty Liver / Metabolic Liver Pattern", "ALT, AST, glucose/BMI and liver model score.", fatty),
+            ("Liver Inflammation Pattern", "SGPT/ALT and SGOT/AST enzyme elevation.", inflammation),
+            ("Bilirubin Clearance Disorder", "Total and direct bilirubin pattern.", bilirubin),
+            ("Low Protein Synthesis Watch", "Albumin and total protein pattern.", synthetic),
+        ]
+    elif disease == "Kidney":
+        ckd = combine_scores(
+            high_marker_score(creatinine, 1.2, 2.5),
+            high_marker_score(urea, 25, 60),
+            high_marker_score(bp, 80, 110),
+            model_risk,
+        )
+        diabetic_nephro = combine_scores(
+            high_marker_score(glucose, 125, 180),
+            high_marker_score(creatinine, 1.2, 2.5),
+            high_marker_score(urea, 25, 60),
+        )
+        electrolyte = combine_scores(
+            high_marker_score(sodium, 145, 155),
+            low_marker_score(sodium, 135, 125),
+            high_marker_score(potassium, 5.1, 6),
+            low_marker_score(potassium, 3.5, 2.8),
+        )
+        renal_anemia = combine_scores(
+            low_marker_score(hemo, 12, 9),
+            low_marker_score(rbc, 4.5, 3.5),
+            low_marker_score(pcv, 36, 28),
+        )
+        cards = [
+            ("Chronic Kidney Disease Pattern", "Creatinine, urea, blood pressure and kidney model score.", ckd),
+            ("Diabetic Nephropathy Watch", "Glucose plus creatinine/urea stress pattern.", diabetic_nephro),
+            ("Electrolyte Imbalance", "Sodium and potassium deviation pattern.", electrolyte),
+            ("Renal Anemia Pattern", "Hemoglobin, RBC count and packed cell volume.", renal_anemia),
+        ]
+
+    rendered = []
+    for name, pattern, current in cards:
+        future = future_watch_score(
+            current,
+            5 if age is not None and age >= 45 else 0,
+            5 if glucose is not None and glucose > 125 else 0,
+            4 if bp is not None and bp > 120 else 0,
+        )
+        rendered.append(
+            {
+                "Disease": name,
+                "Pattern": pattern,
+                "Current Risk": clamp_score(current),
+                "Future Risk": future,
+            }
+        )
+    return rendered
+
+
+def render_specific_disease_patterns(disease, input_values, report_values, model_risk):
+    cards = disease_pattern_cards(disease, input_values, report_values, model_risk)
+    html_cards = []
+    for card in cards:
+        current = card["Current Risk"]
+        future = card["Future Risk"]
+        html_cards.append(
+            f"""
+            <div class="disease-risk-card">
+                <h3>{card['Disease']}</h3>
+                <p>{card['Pattern']}</p>
+                <div class="risk-row">
+                    <div class="risk-mini">
+                        <span>Current screening risk</span>
+                        <strong>{current:.1f}%</strong>
+                        <div class="risk-meter"><div class="risk-fill" style="width:{current}%;"></div></div>
+                    </div>
+                    <div class="risk-mini">
+                        <span>Future watch risk</span>
+                        <strong>{future:.1f}%</strong>
+                        <div class="risk-meter"><div class="risk-fill" style="width:{future}%;"></div></div>
+                    </div>
+                </div>
+            </div>
+            """
+        )
+
+    st.markdown(
+        f"""
+        <div class="section-panel">
+            <h2 style="margin-top:0;">Specific Disease Pattern Screening</h2>
+            <p style="color:#9fc1e7;">
+                These cards show practical disease patterns that can be estimated from available blood-report
+                markers for the {ORGAN_DATA[disease]['organ'].lower()}. They are screening estimates, not diagnosis.
+            </p>
+            <div class="disease-risk-grid">{''.join(html_cards)}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 apply_dashboard_theme()
 render_hero()
 
@@ -2133,6 +2466,7 @@ if st.button(f"Analyse & predict {disease} risk", use_container_width=True):
     st.markdown("---")
     st.header("Prediction Result")
     render_result_dashboard(disease, risk_level, risk_percent, advice)
+    render_specific_disease_patterns(disease, input_values, report_values, risk_percent)
 
     render_projection(disease, risk_percent)
     render_clinical_explanation(disease, rows, risk_level, risk_percent)
