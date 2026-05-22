@@ -1064,9 +1064,38 @@ def numeric_candidates(line):
 
 
 def line_has_label(line, label):
-    if len(label) <= 3:
-        return re.search(rf"(?<![A-Za-z]){re.escape(label)}(?![A-Za-z])", line, flags=re.IGNORECASE)
-    return re.search(re.escape(label), line, flags=re.IGNORECASE)
+    escaped = re.escape(label)
+    if label and label[0].isalnum() and label[-1].isalnum():
+        return re.search(rf"(?<![A-Za-z]){escaped}(?![A-Za-z])", line, flags=re.IGNORECASE)
+    return re.search(escaped, line, flags=re.IGNORECASE)
+
+
+def looks_like_prose(line):
+    prose_words = [
+        "patient",
+        "patients",
+        "recommended",
+        "screening",
+        "explanation",
+        "reflects",
+        "concentration",
+        "measurement",
+        "accepted",
+        "risk",
+        "diabetes mellitus",
+        "normal urinary",
+        "defined as",
+        "indicative",
+        "specimens",
+    ]
+    lowered = line.lower()
+    return len(line) > 150 or any(word in lowered for word in prose_words)
+
+
+def looks_like_range_only(line):
+    numbers = numeric_candidates(line)
+    has_range = re.search(r"[0-9]+(?:\.[0-9]+)?\s*[-\u2013]\s*[0-9]+(?:\.[0-9]+)?", line)
+    return bool(has_range and len(numbers) <= 2 and not looks_like_result_context(line))
 
 
 def choose_best_number(line, label):
@@ -1088,29 +1117,65 @@ def choose_best_number(line, label):
     if not numbers:
         return None
 
-    return numbers[0]
+    return numbers[-1]
+
+
+def looks_like_result_context(text):
+    keywords = [
+        "method",
+        "calculated",
+        "colorimetric",
+        "enzymatic",
+        "oxidase",
+        "peroxidase",
+        "impedance",
+        "chromatography",
+        "turbidimetric",
+        "bromocresol",
+        "direct",
+        "ifcc",
+        "ise",
+        "cube",
+        "derived",
+        "amidohydrolase",
+        "urease",
+        "azobilirubin",
+    ]
+    lowered = text.lower()
+    return any(keyword in lowered for keyword in keywords)
 
 
 def find_marker_value(text, labels):
     lines = text.splitlines() if "\n" in text else [text]
     for label in labels:
-        for line in lines:
+        for index, line in enumerate(lines):
             if line_has_label(line, label):
-                value = choose_best_number(line, label)
-                if value is not None:
-                    return value
+                for result_line in lines[index : min(len(lines), index + 6)]:
+                    if line_has_label(result_line, label) and looks_like_result_context(result_line):
+                        numbers = numeric_candidates(result_line)
+                        if numbers:
+                            return numbers[-1]
 
-    compact_text = re.sub(r"\s+", " ", text)
-    for label in labels:
-        escaped = re.escape(label)
-        match = re.search(rf"{escaped}\s*[:\-]?\s*([0-9]+(?:\.[0-9]+)?)", compact_text, flags=re.IGNORECASE)
-        if match:
-            return match.group(1)
+                split_result_labels = ["hba1c", "glycated hemoglobin", "glycosylated hemoglobin"]
+                if label.lower() in split_result_labels:
+                    for result_line in lines[index + 1 : min(len(lines), index + 10)]:
+                        if looks_like_result_context(result_line):
+                            numbers = numeric_candidates(result_line)
+                            if numbers:
+                                return numbers[-1]
+
+                if (looks_like_result_context(line) or not looks_like_prose(line)) and not looks_like_range_only(line):
+                    value = choose_best_number(line, label)
+                    if value is not None:
+                        return value
+
     return None
 
 
 def find_age(text):
     patterns = [
+        r"\b(?:male|female|m|f)\s*/\s*([0-9]{1,3})\s*(?:years|yrs|yr|y)?\b",
+        r"\b([0-9]{1,3})\s*(?:years|yrs|yr|y)\s*[-/]\s*(?:male|female|m|f)\b",
         r"(?:age|patient age)\s*[:\-]?\s*([0-9]{1,3})\s*(?:years|yrs|yr|y)?",
         r"(?:age\s*/\s*sex|age\s*/\s*gender)\s*[:\-]?\s*([0-9]{1,3})",
         r"([0-9]{1,3})\s*(?:years|yrs|yr)\s*/\s*(?:male|female|m|f)",
@@ -1124,6 +1189,8 @@ def find_age(text):
 
 def find_gender_label(text):
     patterns = [
+        r"\b(male|female|m|f)\s*/\s*[0-9]{1,3}\s*(?:years|yrs|yr|y)?\b",
+        r"\b[0-9]{1,3}\s*(?:years|yrs|yr|y)\s*[-/]\s*(male|female|m|f)\b",
         r"(?:gender|sex)\s*[:\-]?\s*(male|female|m|f)\b",
         r"(?:age\s*/\s*sex|age\s*/\s*gender)\s*[:\-]?\s*[0-9]{1,3}\s*/?\s*(male|female|m|f)\b",
         r"[0-9]{1,3}\s*(?:years|yrs|yr)?\s*/\s*(male|female|m|f)\b",
@@ -1139,7 +1206,7 @@ def find_gender_label(text):
 REPORT_MARKERS = {
     "Diabetes": {
         "pregnancies": ["Pregnancies"],
-        "glucose": ["Glucose Level", "Glucose Fasting", "Glucose", "Fasting Blood Sugar", "FBS", "Blood Sugar Fasting", "Plasma Glucose", "Blood Glucose"],
+        "glucose": ["Fasting Blood Sugar", "FBS", "Blood Sugar Fasting", "Glucose Fasting", "Plasma Glucose", "Blood Glucose", "Glucose Level", "Glucose"],
         "bp": ["Blood Pressure", "B.P.", "BP"],
         "skin": ["Skin Thickness", "Triceps Skin Fold"],
         "insulin": ["Insulin", "Fasting Insulin"],
@@ -1151,7 +1218,7 @@ REPORT_MARKERS = {
     "Heart": {
         "age": ["Age", "Patient Age"],
         "trestbps": ["Resting Blood Pressure", "Blood Pressure", "B.P.", "BP"],
-        "chol": ["Total Cholesterol", "Cholesterol", "Serum Cholesterol"],
+        "chol": ["Total Cholesterol", "Serum Cholesterol", "Cholesterol"],
         "thalach": ["Max Heart Rate", "Maximum Heart Rate", "Heart Rate", "Pulse Rate"],
         "oldpeak": ["ST Depression", "Oldpeak"],
         "fbs_value": ["Fasting Blood Sugar", "FBS", "Blood Sugar Fasting"],
@@ -1159,7 +1226,7 @@ REPORT_MARKERS = {
     "Liver": {
         "age": ["Age", "Patient Age"],
         "total_bili": ["Total Bilirubin", "Bilirubin Total", "Bilirubin - Total"],
-        "direct_bili": ["Direct Bilirubin", "Bilirubin Direct", "Bilirubin - Direct"],
+        "direct_bili": ["Direct Bilirubin", "Conjugated Bilirubin", "Bilirubin Direct", "Bilirubin - Direct"],
         "alk_phos": ["Alkaline Phosphotase", "Alkaline Phosphatase", "Alk Phos", "ALP"],
         "alt": ["Alamine Aminotransferase", "Alanine Aminotransferase", "ALT", "SGPT"],
         "ast": ["Aspartate Aminotransferase", "AST", "SGOT"],
@@ -1171,8 +1238,8 @@ REPORT_MARKERS = {
         "age": ["Age", "Patient Age"],
         "bp": ["Blood Pressure", "B.P.", "BP"],
         "sg": ["Specific Gravity", "Urine Specific Gravity"],
-        "al": ["Urine Albumin", "Albumin"],
-        "su": ["Urine Sugar", "Sugar"],
+        "al": ["Urine Albumin", "Albumin (Urine)", "Albumin Urine"],
+        "su": ["Urine Sugar", "Sugar (Urine)", "Sugar Urine"],
         "bgr": ["Blood Glucose Random", "Random Blood Sugar", "RBS", "Glucose Random"],
         "bu": ["Blood Urea Nitrogen", "Blood Urea", "Urea", "BUN"],
         "sc": ["Serum Creatinine", "Creatinine"],
