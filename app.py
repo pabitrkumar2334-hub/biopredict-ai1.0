@@ -8,7 +8,7 @@ import tempfile
 from datetime import datetime
 
 
-st.set_page_config(page_title="BioPredict AI", page_icon="ðŸ¥", layout="wide")
+st.set_page_config(page_title="BioPredict AI", page_icon=":material/monitor_heart:", layout="wide")
 
 
 ORGAN_DATA = {
@@ -589,7 +589,7 @@ def render_sidebar(selected):
             <div class="wbc w1"></div>
             <div class="wbc w2"></div>
         </div>
-        <div style="color:#6fa9dd;font-size:.78rem;text-align:center;margin-top:6px;">RBC Â· WBC Â· Platelet view</div>
+        <div style="color:#6fa9dd;font-size:.78rem;text-align:center;margin-top:6px;">RBC | WBC | Platelet view</div>
         """,
         unsafe_allow_html=True,
     )
@@ -599,15 +599,9 @@ def render_marker_tiles(disease):
     tiles = []
     for title, caption in ORGAN_DATA[disease]["markers"]:
         tiles.append(
-            f"""
-            <div class="marker-card">
-                <div class="marker-icon"></div>
-                <strong>{title}</strong>
-                <span>{caption}</span>
-            </div>
-            """
+            f'<div class="marker-card"><div class="marker-icon"></div><strong>{title}</strong><span>{caption}</span></div>'
         )
-    st.markdown(f"""<div class="marker-grid">{''.join(tiles)}</div>""", unsafe_allow_html=True)
+    st.markdown(f'<div class="marker-grid">{"".join(tiles)}</div>', unsafe_allow_html=True)
 
 
 def render_context_panel(disease):
@@ -617,7 +611,7 @@ def render_context_panel(disease):
         <div class="section-panel">
             <div class="organ-heading">
                 <span class="live-dot" style="background:{data['tone']}; box-shadow:0 0 18px {data['tone']};"></span>
-                <h2 style="margin:0;">{data['organ']} â€” blood markers</h2>
+                <h2 style="margin:0;">{data['organ']} - blood markers</h2>
             </div>
             <p style="color:#9fc1e7;margin-top:0;">{data['summary']}</p>
         </div>
@@ -806,7 +800,7 @@ def generate_pdf(disease, input_values, risk_level, risk_percent, advice, rows):
 
     pdf.set_font("Helvetica", "", 11)
     for row in rows:
-        status = row["Status"].replace("ðŸ”´ ", "").replace("ðŸŸ¢ ", "").replace("ðŸ”µ ", "")
+        status = row["Status"].replace("Above: ", "").replace("Normal: ", "").replace("Below: ", "")
         if "Above" in status:
             pdf.set_text_color(231, 76, 60)
         elif "Below" in status:
@@ -843,11 +837,11 @@ def build_analysis_rows(input_values):
     for param, val in numeric_inputs.items():
         low, high = normal_ranges[param]
         if val < low:
-            status = "ðŸ”µ Below Normal"
+            status = "Below: Below Normal"
         elif val > high:
-            status = "ðŸ”´ Above Normal"
+            status = "Above: Above Normal"
         else:
-            status = "ðŸŸ¢ Normal"
+            status = "Normal: Normal"
         rows.append(
             {
                 "Parameter": param,
@@ -1052,16 +1046,15 @@ elif disease == "Kidney":
 
 
 st.markdown("---")
-if st.button(f"ðŸ§  Analyse & predict {disease} risk", use_container_width=True):
+if st.button(f"Analyse & predict {disease} risk", use_container_width=True):
     risk_level, risk_percent, advice, color = predict_disease(disease, input_values)
     rows = build_analysis_rows(input_values)
 
     st.markdown("---")
-    st.header("ðŸ“Š Prediction Result")
+    st.header("Prediction Result")
     col1, col2 = st.columns([1, 1.2])
     with col1:
-        emoji = "ðŸ”´" if risk_level == "HIGH RISK" else "ðŸŸ¡" if risk_level == "MODERATE RISK" else "ðŸŸ¢"
-        st.metric("Risk Level", f"{emoji} {risk_level}")
+        st.metric("Risk Level", risk_level)
         st.metric("Risk Score", f"{risk_percent:.2f}%")
     with col2:
         st.progress(int(min(100, max(0, risk_percent))))
@@ -1070,19 +1063,19 @@ if st.button(f"ðŸ§  Analyse & predict {disease} risk", use_container_width=T
     render_projection(disease, risk_percent)
 
     st.markdown("---")
-    st.header("ðŸ“ˆ Graphical Biomarker Comparison")
+    st.header("Graphical Biomarker Comparison")
     fig = plot_risk_chart(input_values, disease)
     st.plotly_chart(fig, use_container_width=True)
 
-    st.header("ðŸ”Ž Parameter Analysis")
+    st.header("Parameter Analysis")
     st.table(pd.DataFrame(rows))
 
     st.markdown("---")
-    st.header("ðŸ“„ Download Report")
+    st.header("Download Report")
     pdf_path = generate_pdf(disease, input_values, risk_level, risk_percent, advice, rows)
     with open(pdf_path, "rb") as f:
         st.download_button(
-            label="â¬‡ï¸ Download PDF Report",
+            label="Download PDF Report",
             data=f,
             file_name=f"BioPredict_{disease}_Report.pdf",
             mime="application/pdf",
