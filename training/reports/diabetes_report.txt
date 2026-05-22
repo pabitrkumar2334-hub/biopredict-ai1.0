@@ -1,0 +1,49 @@
+Diabetes Model Training Report
+==============================
+
+Best model: Gradient Boosting
+Accuracy: 0.7532
+ROC-AUC: 0.8420
+
+
+Logistic Regression
+-------------------
+Accuracy: 0.7143
+ROC-AUC: 0.8230
+              precision    recall  f1-score   support
+
+           0       0.76      0.82      0.79       100
+           1       0.61      0.52      0.56        54
+
+    accuracy                           0.71       154
+   macro avg       0.68      0.67      0.67       154
+weighted avg       0.71      0.71      0.71       154
+
+
+Random Forest
+-------------
+Accuracy: 0.7727
+ROC-AUC: 0.8269
+              precision    recall  f1-score   support
+
+           0       0.81      0.85      0.83       100
+           1       0.69      0.63      0.66        54
+
+    accuracy                           0.77       154
+   macro avg       0.75      0.74      0.74       154
+weighted avg       0.77      0.77      0.77       154
+
+
+Gradient Boosting
+-----------------
+Accuracy: 0.7532
+ROC-AUC: 0.8420
+              precision    recall  f1-score   support
+
+           0       0.79      0.84      0.82       100
+           1       0.67      0.59      0.63        54
+
+    accuracy                           0.75       154
+   macro avg       0.73      0.72      0.72       154
+weighted avg       0.75      0.75      0.75       154
+
