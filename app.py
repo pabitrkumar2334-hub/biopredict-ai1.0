@@ -1113,50 +1113,87 @@ def plot_risk_chart(input_values, disease):
 def generate_pdf(disease, input_values, risk_level, risk_percent, advice, rows):
     pdf = FPDF()
     pdf.add_page()
-    pdf.set_fill_color(6, 18, 35)
-    pdf.rect(0, 0, 210, 38, "F")
-    pdf.set_font("Helvetica", "B", 22)
-    pdf.set_text_color(255, 255, 255)
-    pdf.cell(0, 15, "", ln=True)
-    pdf.cell(0, 15, "  BioPredict AI - Medical Report", ln=True)
-
-    pdf.set_font("Helvetica", "", 10)
-    pdf.set_text_color(100, 100, 100)
-    pdf.cell(0, 8, f"  Generated: {datetime.now().strftime('%d %B %Y, %I:%M %p')}", ln=True)
-    pdf.ln(5)
-
-    pdf.set_font("Helvetica", "B", 16)
-    pdf.set_text_color(41, 128, 185)
-    pdf.cell(0, 10, f"{disease} Risk Assessment", ln=True)
-    pdf.ln(3)
+    data = ORGAN_DATA[disease]
 
     if risk_level == "HIGH RISK":
         r, g, b = 231, 76, 60
+        risk_note = "Priority review recommended"
     elif risk_level == "MODERATE RISK":
         r, g, b = 243, 156, 18
+        risk_note = "Monitor closely and follow up"
     else:
         r, g, b = 39, 174, 96
+        risk_note = "Maintain healthy habits"
+
+    pdf.set_fill_color(5, 12, 24)
+    pdf.rect(0, 0, 210, 42, "F")
+    pdf.set_fill_color(39, 231, 194)
+    pdf.rect(0, 40, 210, 2, "F")
+    pdf.set_font("Helvetica", "B", 22)
+    pdf.set_text_color(255, 255, 255)
+    pdf.cell(0, 13, "", ln=True)
+    pdf.cell(0, 13, "  BioPredict AI", ln=True)
+    pdf.set_font("Helvetica", "", 11)
+    pdf.set_text_color(190, 210, 230)
+    pdf.cell(0, 7, "  Organ-level AI screening report", ln=True)
+
+    pdf.set_font("Helvetica", "", 10)
+    pdf.set_text_color(100, 100, 100)
+    pdf.cell(0, 8, f"Generated: {datetime.now().strftime('%d %B %Y, %I:%M %p')}", ln=True)
+    pdf.ln(3)
+
+    pdf.set_font("Helvetica", "B", 16)
+    pdf.set_text_color(5, 12, 24)
+    pdf.cell(0, 9, f"{data['organ']} Risk Assessment", ln=True)
+    pdf.set_font("Helvetica", "", 10)
+    pdf.set_text_color(90, 100, 115)
+    pdf.multi_cell(0, 6, data["summary"])
+    pdf.ln(2)
 
     pdf.set_fill_color(r, g, b)
     pdf.set_text_color(255, 255, 255)
-    pdf.set_font("Helvetica", "B", 14)
-    pdf.cell(0, 12, f"  Risk Level: {risk_level}  |  Risk Score: {risk_percent:.2f}%", ln=True, fill=True)
-    pdf.ln(3)
+    pdf.set_font("Helvetica", "B", 13)
+    pdf.cell(62, 14, f" Risk Level: {risk_level}", border=0, fill=True)
+    pdf.cell(48, 14, f" Score: {risk_percent:.2f}%", border=0, fill=True)
+    pdf.cell(80, 14, f" {risk_note}", border=0, fill=True, ln=True)
+    pdf.ln(5)
 
-    pdf.set_font("Helvetica", "I", 11)
-    pdf.set_text_color(80, 80, 80)
-    pdf.multi_cell(0, 8, f"Advice: {advice}")
-    pdf.ln(4)
+    pdf.set_fill_color(245, 248, 252)
+    pdf.set_draw_color(220, 228, 238)
+    pdf.rect(10, pdf.get_y(), 190, 32, "DF")
+    box_y = pdf.get_y()
+    pdf.set_xy(14, box_y + 4)
+    pdf.set_font("Helvetica", "B", 12)
+    pdf.set_text_color(5, 12, 24)
+    pdf.cell(0, 7, "Clinical Guidance", ln=True)
+    pdf.set_x(14)
+    pdf.set_font("Helvetica", "", 10)
+    pdf.set_text_color(70, 82, 96)
+    pdf.multi_cell(180, 5.5, advice)
+    pdf.set_x(14)
+    pdf.multi_cell(180, 5.5, f"Suggested specialist: {data['doctor']}. Useful follow-up tests: {data['tests']}.")
+    pdf.set_y(box_y + 37)
 
     pdf.set_font("Helvetica", "B", 12)
-    pdf.set_text_color(255, 255, 255)
-    pdf.set_fill_color(52, 73, 94)
-    pdf.cell(60, 9, "Parameter", border=1, fill=True)
-    pdf.cell(40, 9, "Your Value", border=1, fill=True)
-    pdf.cell(50, 9, "Normal Range", border=1, fill=True)
-    pdf.cell(40, 9, "Status", border=1, fill=True, ln=True)
+    pdf.set_text_color(5, 12, 24)
+    pdf.cell(0, 8, "Disease Signals Reviewed", ln=True)
+    pdf.set_font("Helvetica", "", 10)
+    pdf.set_text_color(70, 82, 96)
+    for signal in data["signals"]:
+        pdf.cell(5)
+        pdf.cell(0, 6, f"- {signal}", ln=True)
+    pdf.ln(3)
 
-    pdf.set_font("Helvetica", "", 11)
+    pdf.set_font("Helvetica", "B", 11)
+    pdf.set_text_color(255, 255, 255)
+    pdf.set_fill_color(5, 12, 24)
+    pdf.cell(58, 9, "Parameter", border=1, fill=True)
+    pdf.cell(38, 9, "Your Value", border=1, fill=True)
+    pdf.cell(46, 9, "Normal Range", border=1, fill=True)
+    pdf.cell(48, 9, "Status", border=1, fill=True, ln=True)
+
+    pdf.set_font("Helvetica", "", 10)
+    fill = False
     for row in rows:
         status = row["Status"].replace("Above: ", "").replace("Normal: ", "").replace("Below: ", "")
         if "Above" in status:
@@ -1165,13 +1202,27 @@ def generate_pdf(disease, input_values, risk_level, risk_percent, advice, rows):
             pdf.set_text_color(52, 152, 219)
         else:
             pdf.set_text_color(39, 174, 96)
-        pdf.set_fill_color(245, 245, 245)
-        pdf.cell(60, 8, str(row["Parameter"]), border=1, fill=True)
-        pdf.cell(40, 8, str(round(row["Your Value"], 2)), border=1, fill=True)
-        pdf.cell(50, 8, str(row["Normal Range"]), border=1, fill=True)
-        pdf.cell(40, 8, status, border=1, fill=True, ln=True)
+        if fill:
+            pdf.set_fill_color(248, 250, 253)
+        else:
+            pdf.set_fill_color(255, 255, 255)
+        pdf.cell(58, 8, str(row["Parameter"]), border=1, fill=True)
+        pdf.cell(38, 8, str(round(row["Your Value"], 2)), border=1, fill=True)
+        pdf.cell(46, 8, str(row["Normal Range"]), border=1, fill=True)
+        pdf.cell(48, 8, status, border=1, fill=True, ln=True)
+        fill = not fill
 
-    pdf.ln(8)
+    pdf.ln(6)
+    pdf.set_font("Helvetica", "B", 12)
+    pdf.set_text_color(5, 12, 24)
+    pdf.cell(0, 8, "Recommended Next Steps", ln=True)
+    pdf.set_font("Helvetica", "", 10)
+    pdf.set_text_color(70, 82, 96)
+    for action in data["actions"]:
+        pdf.cell(5)
+        pdf.multi_cell(0, 6, f"- {action}")
+
+    pdf.ln(4)
     pdf.set_font("Helvetica", "I", 9)
     pdf.set_text_color(150, 150, 150)
     pdf.multi_cell(
