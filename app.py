@@ -1029,7 +1029,12 @@ def render_input_console(disease):
 
 
 def clean_report_text(text):
-    return re.sub(r"\s+", " ", text or "").strip()
+    lines = []
+    for line in (text or "").replace("\r", "\n").split("\n"):
+        cleaned = re.sub(r"\s+", " ", line).strip()
+        if cleaned:
+            lines.append(cleaned)
+    return "\n".join(lines)
 
 
 def extract_pdf_text(uploaded_file):
@@ -1054,64 +1059,129 @@ def extract_pdf_text(uploaded_file):
         return "", report_id
 
 
+def numeric_candidates(line):
+    return re.findall(r"(?<![A-Za-z])([0-9]+(?:\.[0-9]+)?)(?![A-Za-z])", line)
+
+
+def line_has_label(line, label):
+    if len(label) <= 3:
+        return re.search(rf"(?<![A-Za-z]){re.escape(label)}(?![A-Za-z])", line, flags=re.IGNORECASE)
+    return re.search(re.escape(label), line, flags=re.IGNORECASE)
+
+
+def choose_best_number(line, label):
+    after_label = re.split(re.escape(label), line, maxsplit=1, flags=re.IGNORECASE)
+    search_area = after_label[1] if len(after_label) > 1 else line
+
+    explicit = re.search(
+        r"(?:result|value|observed|reading)\s*[:\-]?\s*([0-9]+(?:\.[0-9]+)?)",
+        search_area,
+        flags=re.IGNORECASE,
+    )
+    if explicit:
+        return explicit.group(1)
+
+    numbers = numeric_candidates(search_area)
+    if not numbers:
+        numbers = numeric_candidates(line)
+
+    if not numbers:
+        return None
+
+    return numbers[0]
+
+
 def find_marker_value(text, labels):
+    lines = text.splitlines() if "\n" in text else [text]
+    for label in labels:
+        for line in lines:
+            if line_has_label(line, label):
+                value = choose_best_number(line, label)
+                if value is not None:
+                    return value
+
+    compact_text = re.sub(r"\s+", " ", text)
     for label in labels:
         escaped = re.escape(label)
-        patterns = [
-            rf"{escaped}\s*[:\-]?\s*([0-9]+(?:\.[0-9]+)?)",
-            rf"{escaped}\s+[A-Za-z/%0-9.\- ]{{0,25}}\s+([0-9]+(?:\.[0-9]+)?)",
-        ]
-        for pattern in patterns:
-            match = re.search(pattern, text, flags=re.IGNORECASE)
-            if match:
-                return match.group(1)
+        match = re.search(rf"{escaped}\s*[:\-]?\s*([0-9]+(?:\.[0-9]+)?)", compact_text, flags=re.IGNORECASE)
+        if match:
+            return match.group(1)
+    return None
+
+
+def find_age(text):
+    patterns = [
+        r"(?:age|patient age)\s*[:\-]?\s*([0-9]{1,3})\s*(?:years|yrs|yr|y)?",
+        r"(?:age\s*/\s*sex|age\s*/\s*gender)\s*[:\-]?\s*([0-9]{1,3})",
+        r"([0-9]{1,3})\s*(?:years|yrs|yr)\s*/\s*(?:male|female|m|f)",
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, text, flags=re.IGNORECASE)
+        if match:
+            return match.group(1)
+    return None
+
+
+def find_gender_label(text):
+    patterns = [
+        r"(?:gender|sex)\s*[:\-]?\s*(male|female|m|f)\b",
+        r"(?:age\s*/\s*sex|age\s*/\s*gender)\s*[:\-]?\s*[0-9]{1,3}\s*/?\s*(male|female|m|f)\b",
+        r"[0-9]{1,3}\s*(?:years|yrs|yr)?\s*/\s*(male|female|m|f)\b",
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, text, flags=re.IGNORECASE)
+        if match:
+            value = match.group(1).lower()
+            return "Male" if value in ["male", "m"] else "Female"
     return None
 
 
 REPORT_MARKERS = {
     "Diabetes": {
         "pregnancies": ["Pregnancies"],
-        "glucose": ["Glucose Level", "Glucose", "Fasting Blood Sugar", "FBS", "Blood Sugar Fasting"],
-        "bp": ["Blood Pressure", "BP"],
+        "glucose": ["Glucose Level", "Glucose Fasting", "Glucose", "Fasting Blood Sugar", "FBS", "Blood Sugar Fasting", "Plasma Glucose", "Blood Glucose"],
+        "bp": ["Blood Pressure", "B.P.", "BP"],
         "skin": ["Skin Thickness", "Triceps Skin Fold"],
         "insulin": ["Insulin", "Fasting Insulin"],
         "bmi": ["BMI", "Body Mass Index"],
-        "dpf": ["Diabetes Pedigree Function"],
-        "age": ["Age"],
+        "dpf": ["Diabetes Pedigree Function", "Pedigree Function"],
+        "age": ["Age", "Patient Age"],
+        "hba1c": ["HbA1c", "HBA1C", "Glycated Hemoglobin", "Glycosylated Hemoglobin"],
     },
     "Heart": {
-        "age": ["Age"],
-        "trestbps": ["Resting Blood Pressure", "Blood Pressure", "BP"],
-        "chol": ["Cholesterol", "Total Cholesterol"],
-        "thalach": ["Max Heart Rate", "Maximum Heart Rate", "Heart Rate"],
+        "age": ["Age", "Patient Age"],
+        "trestbps": ["Resting Blood Pressure", "Blood Pressure", "B.P.", "BP"],
+        "chol": ["Total Cholesterol", "Cholesterol", "Serum Cholesterol"],
+        "thalach": ["Max Heart Rate", "Maximum Heart Rate", "Heart Rate", "Pulse Rate"],
         "oldpeak": ["ST Depression", "Oldpeak"],
+        "fbs_value": ["Fasting Blood Sugar", "FBS", "Blood Sugar Fasting"],
     },
     "Liver": {
-        "age": ["Age"],
-        "total_bili": ["Total Bilirubin", "Bilirubin Total"],
-        "direct_bili": ["Direct Bilirubin", "Bilirubin Direct"],
-        "alk_phos": ["Alkaline Phosphotase", "Alkaline Phosphatase", "ALP"],
+        "age": ["Age", "Patient Age"],
+        "total_bili": ["Total Bilirubin", "Bilirubin Total", "Bilirubin - Total"],
+        "direct_bili": ["Direct Bilirubin", "Bilirubin Direct", "Bilirubin - Direct"],
+        "alk_phos": ["Alkaline Phosphotase", "Alkaline Phosphatase", "Alk Phos", "ALP"],
         "alt": ["Alamine Aminotransferase", "Alanine Aminotransferase", "ALT", "SGPT"],
         "ast": ["Aspartate Aminotransferase", "AST", "SGOT"],
-        "total_prot": ["Total Proteins", "Total Protein"],
-        "albumin": ["Albumin"],
-        "ag_ratio": ["Albumin Globulin Ratio", "A/G Ratio", "Albumin/Globulin Ratio"],
+        "total_prot": ["Total Proteins", "Total Protein", "Protein Total"],
+        "albumin": ["Serum Albumin", "Albumin"],
+        "ag_ratio": ["Albumin Globulin Ratio", "A/G Ratio", "Albumin/Globulin Ratio", "AG Ratio"],
     },
     "Kidney": {
-        "age": ["Age"],
-        "bp": ["Blood Pressure", "BP"],
-        "sg": ["Specific Gravity"],
-        "al": ["Albumin"],
-        "su": ["Sugar"],
+        "age": ["Age", "Patient Age"],
+        "bp": ["Blood Pressure", "B.P.", "BP"],
+        "sg": ["Specific Gravity", "Urine Specific Gravity"],
+        "al": ["Urine Albumin", "Albumin"],
+        "su": ["Urine Sugar", "Sugar"],
         "bgr": ["Blood Glucose Random", "Random Blood Sugar", "RBS", "Glucose Random"],
-        "bu": ["Blood Urea", "Urea"],
+        "bu": ["Blood Urea Nitrogen", "Blood Urea", "Urea", "BUN"],
         "sc": ["Serum Creatinine", "Creatinine"],
-        "sod": ["Sodium", "Na"],
-        "pot": ["Potassium", "K"],
+        "sod": ["Serum Sodium", "Sodium", "Na+"],
+        "pot": ["Serum Potassium", "Potassium", "K+"],
         "hemo": ["Hemoglobin", "Haemoglobin", "Hb"],
-        "pcv": ["Packed Cell Volume", "PCV"],
-        "wc": ["White Blood Cell Count", "WBC", "Total Leukocyte Count", "TLC"],
-        "rc": ["Red Blood Cell Count", "RBC"],
+        "pcv": ["Packed Cell Volume", "PCV", "Hematocrit", "HCT"],
+        "wc": ["White Blood Cell Count", "WBC Count", "WBC", "Total Leukocyte Count", "TLC"],
+        "rc": ["Red Blood Cell Count", "RBC Count", "RBC"],
     },
 }
 
@@ -1120,10 +1190,24 @@ def parse_report_values(text, disease):
     values = {}
     if not text:
         return values
+    age = find_age(text)
+    if age is not None:
+        values["age"] = age
+
+    gender_label = find_gender_label(text)
+    if gender_label is not None:
+        values["gender_label"] = gender_label
+        values["gender_binary"] = 1 if gender_label == "Male" else 0
+
     for field, labels in REPORT_MARKERS[disease].items():
+        if field == "age" and "age" in values:
+            continue
         value = find_marker_value(text, labels)
         if value is not None:
             values[field] = value
+
+    if disease == "Heart" and "fbs_value" in values:
+        values["fbs"] = 1 if get_float(values["fbs_value"]) > 120 else 0
     return values
 
 
@@ -1170,6 +1254,21 @@ def render_report_upload(disease):
 
 def autofill(report_values, field, fallback):
     return str(report_values.get(field, fallback))
+
+
+def selected_gender_index(report_values, options):
+    gender = report_values.get("gender_label")
+    if gender in options:
+        return options.index(gender)
+    return 0
+
+
+def selected_binary_index(report_values, field, fallback=0):
+    try:
+        value = int(report_values.get(field, fallback))
+        return 1 if value == 1 else 0
+    except Exception:
+        return fallback
 
 
 def field_key(disease, field, report_id):
@@ -1516,7 +1615,12 @@ report_values, report_id = render_report_upload(disease)
 if disease == "Diabetes":
     col1, col2 = st.columns(2)
     with col1:
-        gender = st.selectbox("Gender", ["Female", "Male"])
+        gender = st.selectbox(
+            "Gender",
+            ["Female", "Male"],
+            index=selected_gender_index(report_values, ["Female", "Male"]),
+            key=field_key(disease, "gender", report_id),
+        )
         pregnancies = st.text_input("Pregnancies", autofill(report_values, "pregnancies", "1"), key=field_key(disease, "pregnancies", report_id))
         glucose = st.text_input("Glucose Level", autofill(report_values, "glucose", "120"), key=field_key(disease, "glucose", report_id))
         bp = st.text_input("Blood Pressure", autofill(report_values, "bp", "70"), key=field_key(disease, "bp", report_id))
@@ -1541,11 +1645,22 @@ elif disease == "Heart":
     col1, col2 = st.columns(2)
     with col1:
         age = st.text_input("Age", autofill(report_values, "age", "50"), key=field_key(disease, "age", report_id))
-        sex = st.selectbox("Sex", [0, 1], format_func=lambda x: "Female" if x == 0 else "Male")
+        sex = st.selectbox(
+            "Sex",
+            [0, 1],
+            index=selected_binary_index(report_values, "gender_binary"),
+            format_func=lambda x: "Female" if x == 0 else "Male",
+            key=field_key(disease, "sex", report_id),
+        )
         cp = st.selectbox("Chest Pain Type (0-3)", [0, 1, 2, 3])
         trestbps = st.text_input("Resting Blood Pressure", autofill(report_values, "trestbps", "120"), key=field_key(disease, "trestbps", report_id))
         chol = st.text_input("Cholesterol", autofill(report_values, "chol", "200"), key=field_key(disease, "chol", report_id))
-        fbs = st.selectbox("Fasting Blood Sugar > 120", [0, 1])
+        fbs = st.selectbox(
+            "Fasting Blood Sugar > 120",
+            [0, 1],
+            index=selected_binary_index(report_values, "fbs"),
+            key=field_key(disease, "fbs", report_id),
+        )
         restecg = st.selectbox("Resting ECG (0-2)", [0, 1, 2])
     with col2:
         thalach = st.text_input("Max Heart Rate", autofill(report_values, "thalach", "150"), key=field_key(disease, "thalach", report_id))
@@ -1574,7 +1689,13 @@ elif disease == "Liver":
     col1, col2 = st.columns(2)
     with col1:
         age = st.text_input("Age", autofill(report_values, "age", "40"), key=field_key(disease, "age", report_id))
-        gender = st.selectbox("Gender", [0, 1], format_func=lambda x: "Female" if x == 0 else "Male")
+        gender = st.selectbox(
+            "Gender",
+            [0, 1],
+            index=selected_binary_index(report_values, "gender_binary"),
+            format_func=lambda x: "Female" if x == 0 else "Male",
+            key=field_key(disease, "gender", report_id),
+        )
         total_bili = st.text_input("Total Bilirubin", autofill(report_values, "total_bili", "1.0"), key=field_key(disease, "total_bili", report_id))
         direct_bili = st.text_input("Direct Bilirubin", autofill(report_values, "direct_bili", "0.3"), key=field_key(disease, "direct_bili", report_id))
         alk_phos = st.text_input("Alkaline Phosphotase", autofill(report_values, "alk_phos", "200"), key=field_key(disease, "alk_phos", report_id))
@@ -1600,7 +1721,12 @@ elif disease == "Liver":
 elif disease == "Kidney":
     col1, col2, col3 = st.columns(3)
     with col1:
-        gender = st.selectbox("Gender", ["Female", "Male"])
+        gender = st.selectbox(
+            "Gender",
+            ["Female", "Male"],
+            index=selected_gender_index(report_values, ["Female", "Male"]),
+            key=field_key(disease, "gender", report_id),
+        )
         age = st.text_input("Age", autofill(report_values, "age", "40"), key=field_key(disease, "age", report_id))
         bp = st.text_input("Blood Pressure", autofill(report_values, "bp", "80"), key=field_key(disease, "bp", report_id))
         sg = st.text_input("Specific Gravity", autofill(report_values, "sg", "1.020"), key=field_key(disease, "sg", report_id))
