@@ -6,6 +6,16 @@ import os
 from fpdf import FPDF
 import tempfile
 from datetime import datetime
+import re
+import hashlib
+
+try:
+    from pypdf import PdfReader
+except Exception:
+    try:
+        from PyPDF2 import PdfReader
+    except Exception:
+        PdfReader = None
 
 
 st.set_page_config(page_title="BioPredict AI", page_icon=":material/monitor_heart:", layout="wide")
@@ -593,6 +603,46 @@ def apply_dashboard_theme():
             color: #69f4d8;
         }
 
+        .upload-panel {
+            background:
+                linear-gradient(135deg, rgba(39,231,194,.08), rgba(77,163,255,.06)),
+                rgba(255,255,255,.035);
+            border: 1px solid rgba(39,231,194,.22);
+            border-radius: 16px;
+            padding: 18px;
+            margin: 14px 0 20px 0;
+        }
+
+        .upload-panel h2 {
+            margin: 0 0 8px 0;
+        }
+
+        .upload-panel p {
+            color: #9fc1e7;
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        .extraction-list {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .extract-pill {
+            background: rgba(255,255,255,.045);
+            border: 1px solid rgba(77,163,255,.16);
+            border-radius: 10px;
+            padding: 9px 11px;
+            color: #dcecff;
+            font-size: .86rem;
+        }
+
+        .extract-pill b {
+            color: #69f4d8;
+        }
+
         .intel-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -768,12 +818,12 @@ def apply_dashboard_theme():
 
         @media (max-width: 900px) {
             .dna-stage { opacity: .3; right: -40px; }
-            .marker-grid, .projection-grid, .intel-grid, .result-actions { grid-template-columns: 1fr 1fr; }
+            .marker-grid, .projection-grid, .intel-grid, .result-actions, .extraction-list { grid-template-columns: 1fr 1fr; }
             .result-top { align-items: flex-start; }
         }
 
         @media (max-width: 620px) {
-            .marker-grid, .projection-grid, .intel-grid, .result-actions { grid-template-columns: 1fr; }
+            .marker-grid, .projection-grid, .intel-grid, .result-actions, .extraction-list { grid-template-columns: 1fr; }
             .hero { min-height: 330px; }
             .result-top { flex-direction: column; }
         }
@@ -976,6 +1026,154 @@ def render_input_console(disease):
         """,
         unsafe_allow_html=True,
     )
+
+
+def clean_report_text(text):
+    return re.sub(r"\s+", " ", text or "").strip()
+
+
+def extract_pdf_text(uploaded_file):
+    if uploaded_file is None:
+        return "", ""
+    file_bytes = uploaded_file.getvalue()
+    report_id = hashlib.md5(file_bytes).hexdigest()[:10]
+
+    if PdfReader is None:
+        st.error("PDF reading is not available yet. Add pypdf to requirements.txt, then redeploy.")
+        return "", report_id
+
+    try:
+        uploaded_file.seek(0)
+        reader = PdfReader(uploaded_file)
+        pages = []
+        for page in reader.pages:
+            pages.append(page.extract_text() or "")
+        return clean_report_text(" ".join(pages)), report_id
+    except Exception as exc:
+        st.error(f"Could not read this PDF report. Try another PDF or enter values manually. Details: {exc}")
+        return "", report_id
+
+
+def find_marker_value(text, labels):
+    for label in labels:
+        escaped = re.escape(label)
+        patterns = [
+            rf"{escaped}\s*[:\-]?\s*([0-9]+(?:\.[0-9]+)?)",
+            rf"{escaped}\s+[A-Za-z/%0-9.\- ]{{0,25}}\s+([0-9]+(?:\.[0-9]+)?)",
+        ]
+        for pattern in patterns:
+            match = re.search(pattern, text, flags=re.IGNORECASE)
+            if match:
+                return match.group(1)
+    return None
+
+
+REPORT_MARKERS = {
+    "Diabetes": {
+        "pregnancies": ["Pregnancies"],
+        "glucose": ["Glucose Level", "Glucose", "Fasting Blood Sugar", "FBS", "Blood Sugar Fasting"],
+        "bp": ["Blood Pressure", "BP"],
+        "skin": ["Skin Thickness", "Triceps Skin Fold"],
+        "insulin": ["Insulin", "Fasting Insulin"],
+        "bmi": ["BMI", "Body Mass Index"],
+        "dpf": ["Diabetes Pedigree Function"],
+        "age": ["Age"],
+    },
+    "Heart": {
+        "age": ["Age"],
+        "trestbps": ["Resting Blood Pressure", "Blood Pressure", "BP"],
+        "chol": ["Cholesterol", "Total Cholesterol"],
+        "thalach": ["Max Heart Rate", "Maximum Heart Rate", "Heart Rate"],
+        "oldpeak": ["ST Depression", "Oldpeak"],
+    },
+    "Liver": {
+        "age": ["Age"],
+        "total_bili": ["Total Bilirubin", "Bilirubin Total"],
+        "direct_bili": ["Direct Bilirubin", "Bilirubin Direct"],
+        "alk_phos": ["Alkaline Phosphotase", "Alkaline Phosphatase", "ALP"],
+        "alt": ["Alamine Aminotransferase", "Alanine Aminotransferase", "ALT", "SGPT"],
+        "ast": ["Aspartate Aminotransferase", "AST", "SGOT"],
+        "total_prot": ["Total Proteins", "Total Protein"],
+        "albumin": ["Albumin"],
+        "ag_ratio": ["Albumin Globulin Ratio", "A/G Ratio", "Albumin/Globulin Ratio"],
+    },
+    "Kidney": {
+        "age": ["Age"],
+        "bp": ["Blood Pressure", "BP"],
+        "sg": ["Specific Gravity"],
+        "al": ["Albumin"],
+        "su": ["Sugar"],
+        "bgr": ["Blood Glucose Random", "Random Blood Sugar", "RBS", "Glucose Random"],
+        "bu": ["Blood Urea", "Urea"],
+        "sc": ["Serum Creatinine", "Creatinine"],
+        "sod": ["Sodium", "Na"],
+        "pot": ["Potassium", "K"],
+        "hemo": ["Hemoglobin", "Haemoglobin", "Hb"],
+        "pcv": ["Packed Cell Volume", "PCV"],
+        "wc": ["White Blood Cell Count", "WBC", "Total Leukocyte Count", "TLC"],
+        "rc": ["Red Blood Cell Count", "RBC"],
+    },
+}
+
+
+def parse_report_values(text, disease):
+    values = {}
+    if not text:
+        return values
+    for field, labels in REPORT_MARKERS[disease].items():
+        value = find_marker_value(text, labels)
+        if value is not None:
+            values[field] = value
+    return values
+
+
+def render_report_upload(disease):
+    st.markdown(
+        """
+        <div class="upload-panel">
+            <h2>Upload Blood Report PDF</h2>
+            <p>
+                Upload a hospital blood report PDF to auto-detect available values.
+                You can still edit every field before running prediction.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    uploaded_file = st.file_uploader(
+        "Upload hospital blood report PDF",
+        type=["pdf"],
+        key=f"{disease}_report_upload",
+        help="Works best with text-based lab PDFs. Scanned image PDFs may need manual entry.",
+    )
+
+    report_text, report_id = extract_pdf_text(uploaded_file)
+    extracted_values = parse_report_values(report_text, disease)
+
+    if uploaded_file is not None:
+        if extracted_values:
+            st.success(f"Found {len(extracted_values)} values in the PDF. Please review them below before prediction.")
+            pills = []
+            for key, value in extracted_values.items():
+                pills.append(f'<div class="extract-pill"><b>{key}</b>: {value}</div>')
+            st.markdown(f'<div class="extraction-list">{"".join(pills)}</div>', unsafe_allow_html=True)
+        else:
+            st.warning(
+                "I could not confidently find matching values in this PDF. "
+                "This can happen with scanned reports or unusual lab formats. Please enter values manually."
+            )
+            with st.expander("Show extracted text preview"):
+                st.write(report_text[:2500] if report_text else "No readable text found.")
+
+    return extracted_values, report_id
+
+
+def autofill(report_values, field, fallback):
+    return str(report_values.get(field, fallback))
+
+
+def field_key(disease, field, report_id):
+    return f"{disease}_{field}_{report_id or 'manual'}"
 
 
 @st.cache_resource
@@ -1312,21 +1510,22 @@ render_context_panel(disease)
 render_marker_tiles(disease)
 render_disease_intelligence(disease)
 render_input_console(disease)
+report_values, report_id = render_report_upload(disease)
 
 
 if disease == "Diabetes":
     col1, col2 = st.columns(2)
     with col1:
         gender = st.selectbox("Gender", ["Female", "Male"])
-        pregnancies = st.text_input("Pregnancies", "1")
-        glucose = st.text_input("Glucose Level", "120")
-        bp = st.text_input("Blood Pressure", "70")
+        pregnancies = st.text_input("Pregnancies", autofill(report_values, "pregnancies", "1"), key=field_key(disease, "pregnancies", report_id))
+        glucose = st.text_input("Glucose Level", autofill(report_values, "glucose", "120"), key=field_key(disease, "glucose", report_id))
+        bp = st.text_input("Blood Pressure", autofill(report_values, "bp", "70"), key=field_key(disease, "bp", report_id))
     with col2:
-        skin = st.text_input("Skin Thickness", "20")
-        insulin = st.text_input("Insulin", "80")
-        bmi = st.text_input("BMI", "25.0")
-        dpf = st.text_input("Diabetes Pedigree Function", "0.5")
-        age = st.text_input("Age", "30")
+        skin = st.text_input("Skin Thickness", autofill(report_values, "skin", "20"), key=field_key(disease, "skin", report_id))
+        insulin = st.text_input("Insulin", autofill(report_values, "insulin", "80"), key=field_key(disease, "insulin", report_id))
+        bmi = st.text_input("BMI", autofill(report_values, "bmi", "25.0"), key=field_key(disease, "bmi", report_id))
+        dpf = st.text_input("Diabetes Pedigree Function", autofill(report_values, "dpf", "0.5"), key=field_key(disease, "dpf", report_id))
+        age = st.text_input("Age", autofill(report_values, "age", "30"), key=field_key(disease, "age", report_id))
     input_values = {
         "Pregnancies": get_int(pregnancies),
         "Glucose": get_float(glucose),
@@ -1341,17 +1540,17 @@ if disease == "Diabetes":
 elif disease == "Heart":
     col1, col2 = st.columns(2)
     with col1:
-        age = st.text_input("Age", "50")
+        age = st.text_input("Age", autofill(report_values, "age", "50"), key=field_key(disease, "age", report_id))
         sex = st.selectbox("Sex", [0, 1], format_func=lambda x: "Female" if x == 0 else "Male")
         cp = st.selectbox("Chest Pain Type (0-3)", [0, 1, 2, 3])
-        trestbps = st.text_input("Resting Blood Pressure", "120")
-        chol = st.text_input("Cholesterol", "200")
+        trestbps = st.text_input("Resting Blood Pressure", autofill(report_values, "trestbps", "120"), key=field_key(disease, "trestbps", report_id))
+        chol = st.text_input("Cholesterol", autofill(report_values, "chol", "200"), key=field_key(disease, "chol", report_id))
         fbs = st.selectbox("Fasting Blood Sugar > 120", [0, 1])
         restecg = st.selectbox("Resting ECG (0-2)", [0, 1, 2])
     with col2:
-        thalach = st.text_input("Max Heart Rate", "150")
+        thalach = st.text_input("Max Heart Rate", autofill(report_values, "thalach", "150"), key=field_key(disease, "thalach", report_id))
         exang = st.selectbox("Exercise Induced Angina", [0, 1])
-        oldpeak = st.text_input("ST Depression", "1.0")
+        oldpeak = st.text_input("ST Depression", autofill(report_values, "oldpeak", "1.0"), key=field_key(disease, "oldpeak", report_id))
         slope = st.selectbox("Slope of ST (0-2)", [0, 1, 2])
         ca = st.selectbox("Major Vessels (0-4)", [0, 1, 2, 3, 4])
         thal = st.selectbox("Thal (0-3)", [0, 1, 2, 3])
@@ -1374,17 +1573,17 @@ elif disease == "Heart":
 elif disease == "Liver":
     col1, col2 = st.columns(2)
     with col1:
-        age = st.text_input("Age", "40")
+        age = st.text_input("Age", autofill(report_values, "age", "40"), key=field_key(disease, "age", report_id))
         gender = st.selectbox("Gender", [0, 1], format_func=lambda x: "Female" if x == 0 else "Male")
-        total_bili = st.text_input("Total Bilirubin", "1.0")
-        direct_bili = st.text_input("Direct Bilirubin", "0.3")
-        alk_phos = st.text_input("Alkaline Phosphotase", "200")
+        total_bili = st.text_input("Total Bilirubin", autofill(report_values, "total_bili", "1.0"), key=field_key(disease, "total_bili", report_id))
+        direct_bili = st.text_input("Direct Bilirubin", autofill(report_values, "direct_bili", "0.3"), key=field_key(disease, "direct_bili", report_id))
+        alk_phos = st.text_input("Alkaline Phosphotase", autofill(report_values, "alk_phos", "200"), key=field_key(disease, "alk_phos", report_id))
     with col2:
-        alt = st.text_input("Alamine Aminotransferase", "30")
-        ast = st.text_input("Aspartate Aminotransferase", "30")
-        total_prot = st.text_input("Total Proteins", "6.5")
-        albumin = st.text_input("Albumin", "3.5")
-        ag_ratio = st.text_input("Albumin/Globulin Ratio", "1.0")
+        alt = st.text_input("Alamine Aminotransferase", autofill(report_values, "alt", "30"), key=field_key(disease, "alt", report_id))
+        ast = st.text_input("Aspartate Aminotransferase", autofill(report_values, "ast", "30"), key=field_key(disease, "ast", report_id))
+        total_prot = st.text_input("Total Proteins", autofill(report_values, "total_prot", "6.5"), key=field_key(disease, "total_prot", report_id))
+        albumin = st.text_input("Albumin", autofill(report_values, "albumin", "3.5"), key=field_key(disease, "albumin", report_id))
+        ag_ratio = st.text_input("Albumin/Globulin Ratio", autofill(report_values, "ag_ratio", "1.0"), key=field_key(disease, "ag_ratio", report_id))
     input_values = {
         "Age": get_int(age),
         "Gender": gender,
@@ -1402,26 +1601,26 @@ elif disease == "Kidney":
     col1, col2, col3 = st.columns(3)
     with col1:
         gender = st.selectbox("Gender", ["Female", "Male"])
-        age = st.text_input("Age", "40")
-        bp = st.text_input("Blood Pressure", "80")
-        sg = st.text_input("Specific Gravity", "1.020")
-        al = st.text_input("Albumin (0-5)", "0")
-        su = st.text_input("Sugar (0-5)", "0")
+        age = st.text_input("Age", autofill(report_values, "age", "40"), key=field_key(disease, "age", report_id))
+        bp = st.text_input("Blood Pressure", autofill(report_values, "bp", "80"), key=field_key(disease, "bp", report_id))
+        sg = st.text_input("Specific Gravity", autofill(report_values, "sg", "1.020"), key=field_key(disease, "sg", report_id))
+        al = st.text_input("Albumin (0-5)", autofill(report_values, "al", "0"), key=field_key(disease, "al", report_id))
+        su = st.text_input("Sugar (0-5)", autofill(report_values, "su", "0"), key=field_key(disease, "su", report_id))
         rbc = st.selectbox("Red Blood Cells", [0, 1], format_func=lambda x: "Abnormal" if x == 0 else "Normal")
         pc = st.selectbox("Pus Cells", [0, 1], format_func=lambda x: "Abnormal" if x == 0 else "Normal")
         pcc = st.selectbox("Pus Cell Clumps", [0, 1], format_func=lambda x: "Not Present" if x == 0 else "Present")
     with col2:
         ba = st.selectbox("Bacteria", [0, 1], format_func=lambda x: "Not Present" if x == 0 else "Present")
-        bgr = st.text_input("Blood Glucose Random", "120")
-        bu = st.text_input("Blood Urea", "40")
-        sc = st.text_input("Serum Creatinine", "1.2")
-        sod = st.text_input("Sodium", "138")
-        pot = st.text_input("Potassium", "4.5")
-        hemo = st.text_input("Hemoglobin", "15.0")
-        pcv = st.text_input("Packed Cell Volume", "44")
+        bgr = st.text_input("Blood Glucose Random", autofill(report_values, "bgr", "120"), key=field_key(disease, "bgr", report_id))
+        bu = st.text_input("Blood Urea", autofill(report_values, "bu", "40"), key=field_key(disease, "bu", report_id))
+        sc = st.text_input("Serum Creatinine", autofill(report_values, "sc", "1.2"), key=field_key(disease, "sc", report_id))
+        sod = st.text_input("Sodium", autofill(report_values, "sod", "138"), key=field_key(disease, "sod", report_id))
+        pot = st.text_input("Potassium", autofill(report_values, "pot", "4.5"), key=field_key(disease, "pot", report_id))
+        hemo = st.text_input("Hemoglobin", autofill(report_values, "hemo", "15.0"), key=field_key(disease, "hemo", report_id))
+        pcv = st.text_input("Packed Cell Volume", autofill(report_values, "pcv", "44"), key=field_key(disease, "pcv", report_id))
     with col3:
-        wc = st.text_input("White Blood Cell Count", "8000")
-        rc = st.text_input("Red Blood Cell Count", "5.0")
+        wc = st.text_input("White Blood Cell Count", autofill(report_values, "wc", "8000"), key=field_key(disease, "wc", report_id))
+        rc = st.text_input("Red Blood Cell Count", autofill(report_values, "rc", "5.0"), key=field_key(disease, "rc", report_id))
         htn = st.selectbox("Hypertension", [0, 1], format_func=lambda x: "No" if x == 0 else "Yes")
         dm = st.selectbox("Diabetes Mellitus", [0, 1], format_func=lambda x: "No" if x == 0 else "Yes")
         cad = st.selectbox("Coronary Artery Disease", [0, 1], format_func=lambda x: "No" if x == 0 else "Yes")
