@@ -379,11 +379,7 @@ def apply_dashboard_theme():
         .orb.o3 { left: 28px; top: 88px; color: #27e7c2; animation-delay: .5s; }
         .orb.o4 { right: 26px; top: 130px; color: #4da3ff; animation-delay: .75s; }
 
-        .organ-visual-panel {
-            display: grid;
-            grid-template-columns: 1.05fr .95fr;
-            gap: 18px;
-            align-items: center;
+        .organ-visual-intro {
             background:
                 radial-gradient(circle at 82% 35%, rgba(39,231,194,.10), transparent 35%),
                 rgba(12, 22, 38, 0.62);
@@ -1203,23 +1199,29 @@ def organ_svg_markup(disease):
 
 def render_organ_visual(disease):
     data = ORGAN_DATA[disease]
-    st.markdown(
-        f"""
-        <div class="organ-visual-panel">
-            <div class="organ-copy">
+    col1, col2 = st.columns([1.05, 0.95])
+    with col1:
+        st.markdown(
+            f"""
+            <div class="organ-visual-intro organ-copy">
                 <h2>{data['organ']} interactive map</h2>
                 <p>
                     This visual highlights the organ system connected to the selected blood-marker panel.
                     Hover the drawing to speed up the motion and emphasize the active biological pathways.
                 </p>
             </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    with col2:
+        st.markdown(
+            f"""
             <div class="organ-svg-wrap">
                 {organ_svg_markup(disease)}
             </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+            """,
+            unsafe_allow_html=True,
+        )
 
 
 def render_disease_intelligence(disease):
