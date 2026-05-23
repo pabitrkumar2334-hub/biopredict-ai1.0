@@ -8,6 +8,19 @@ import tempfile
 from datetime import datetime
 import re
 import hashlib
+from io import BytesIO
+
+try:
+    from PIL import Image, ImageOps, ImageFilter
+except Exception:
+    Image = None
+    ImageOps = None
+    ImageFilter = None
+
+try:
+    import pytesseract
+except Exception:
+    pytesseract = None
 
 try:
     from pypdf import PdfReader
@@ -1337,6 +1350,55 @@ def extract_pdf_text(uploaded_file):
         return "", report_id
 
 
+def preprocess_report_image(image):
+    image = ImageOps.exif_transpose(image)
+    image = image.convert("L")
+    width, height = image.size
+    scale = max(1, int(1600 / max(1, width)))
+    if scale > 1:
+        image = image.resize((width * scale, height * scale))
+    image = ImageOps.autocontrast(image)
+    image = image.filter(ImageFilter.SHARPEN)
+    return image
+
+
+def extract_image_text(uploaded_file):
+    if uploaded_file is None:
+        return "", ""
+    file_bytes = uploaded_file.getvalue()
+    report_id = hashlib.md5(file_bytes).hexdigest()[:10]
+
+    if Image is None or pytesseract is None:
+        st.error("Image OCR is not available yet. Add pytesseract and Pillow to requirements.txt, plus tesseract-ocr to packages.txt.")
+        return "", report_id
+
+    try:
+        image = Image.open(BytesIO(file_bytes))
+        processed = preprocess_report_image(image)
+        text = pytesseract.image_to_string(processed, config="--psm 6")
+        return clean_report_text(text), report_id
+    except Exception as exc:
+        st.error(f"Could not read this image report. Try a clearer image or enter values manually. Details: {exc}")
+        return "", report_id
+
+
+def extract_report_text(uploaded_file):
+    if uploaded_file is None:
+        return "", ""
+
+    name = (uploaded_file.name or "").lower()
+    mime = (uploaded_file.type or "").lower()
+
+    if name.endswith(".pdf") or "pdf" in mime:
+        return extract_pdf_text(uploaded_file)
+
+    if name.endswith((".png", ".jpg", ".jpeg", ".webp", ".bmp", ".tiff", ".tif")) or mime.startswith("image/"):
+        return extract_image_text(uploaded_file)
+
+    st.error("Unsupported report format. Please upload PDF, PNG, JPG, JPEG, WEBP, BMP, or TIFF.")
+    return "", ""
+
+
 def numeric_candidates(line):
     return re.findall(r"(?<![A-Za-z])([0-9]+(?:\.[0-9]+)?)(?![A-Za-z])", line)
 
@@ -1695,9 +1757,9 @@ def render_report_upload(disease):
     st.markdown(
         """
         <div class="upload-panel">
-            <h2>Upload Blood Report PDF</h2>
+            <h2>Upload Blood Report</h2>
             <p>
-                Upload a hospital blood report PDF to auto-detect available values.
+                Upload a hospital blood report PDF or image to auto-detect available values.
                 You can still edit every field before running prediction.
             </p>
         </div>
@@ -1705,13 +1767,13 @@ def render_report_upload(disease):
         unsafe_allow_html=True,
     )
     uploaded_file = st.file_uploader(
-        "Upload hospital blood report PDF",
-        type=["pdf"],
+        "Upload hospital blood report PDF or image",
+        type=["pdf", "png", "jpg", "jpeg", "webp", "bmp", "tiff", "tif"],
         key=f"{disease}_report_upload",
-        help="Works best with text-based lab PDFs. Scanned image PDFs may need manual entry.",
+        help="PDFs use text extraction. Images use OCR, so clear, straight, high-resolution photos work best.",
     )
 
-    report_text, report_id = extract_pdf_text(uploaded_file)
+    report_text, report_id = extract_report_text(uploaded_file)
     module_details = {}
     if report_text:
         module_details = {
@@ -1735,8 +1797,8 @@ def render_report_upload(disease):
                 )
         else:
             st.warning(
-                "I could not confidently find matching values in this PDF. "
-                "This can happen with scanned reports or unusual lab formats. Please enter values manually."
+                "I could not confidently find matching values in this report. "
+                "This can happen with blurry images, scanned reports, or unusual lab formats. Please enter values manually."
             )
             with st.expander("Show extracted text preview"):
                 st.write(report_text[:2500] if report_text else "No readable text found.")
