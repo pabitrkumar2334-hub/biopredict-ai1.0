@@ -6,3 +6,5 @@ numpy
 plotly
 fpdf2
 pypdf
+pytesseract
+Pillow
