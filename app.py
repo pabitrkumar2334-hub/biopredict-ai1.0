@@ -1916,15 +1916,30 @@ def field_key(disease, field, report_id):
     return f"{disease}_{field}_{report_id or 'manual'}"
 
 
+MODEL_LOAD_ERRORS = {}
+
+
 @st.cache_resource
 def load_models():
     models = {}
+    MODEL_LOAD_ERRORS.clear()
     model_dir = "./saved_models"
     for disease in ["diabetes", "heart", "liver", "kidney"]:
         path = f"{model_dir}/{disease}_model.pkl"
         if os.path.exists(path):
-            with open(path, "rb") as f:
-                models[disease.capitalize()] = pickle.load(f)
+            model_name = disease.capitalize()
+            try:
+                with open(path, "rb") as f:
+                    model_package = pickle.load(f)
+
+                if not isinstance(model_package, dict):
+                    raise ValueError("The saved file is not a model package dictionary.")
+                if "model" not in model_package or "features" not in model_package:
+                    raise ValueError("The saved model package must include 'model' and 'features'.")
+
+                models[model_name] = model_package
+            except Exception as exc:
+                MODEL_LOAD_ERRORS[model_name] = f"{type(exc).__name__}: {exc}"
     return models
 
 
@@ -2549,9 +2564,18 @@ disease = st.sidebar.selectbox(
 render_sidebar(disease)
 st.sidebar.info("Fill in the blood report values and click Predict.")
 
+if MODEL_LOAD_ERRORS:
+    st.sidebar.warning("Some saved models could not be loaded.")
+    with st.sidebar.expander("Model load details"):
+        for model_name, error_message in MODEL_LOAD_ERRORS.items():
+            st.caption(f"{model_name}: {error_message}")
+
 
 if disease not in models:
     st.error(f"{disease} model was not found in saved_models. Please check the uploaded model files.")
+    if disease in MODEL_LOAD_ERRORS:
+        st.warning("This model file exists, but Streamlit Cloud could not open it.")
+        st.code(MODEL_LOAD_ERRORS[disease])
     st.stop()
 
 
@@ -2735,7 +2759,14 @@ elif disease == "Kidney":
 
 st.markdown("---")
 if st.button(f"Analyse & predict {disease} risk", use_container_width=True):
-    risk_level, risk_percent, advice, color = predict_disease(disease, input_values)
+    try:
+        risk_level, risk_percent, advice, color = predict_disease(disease, input_values)
+    except Exception as exc:
+        st.error(f"{disease} prediction could not run with the current saved model.")
+        st.warning("The website is working, but this model file needs to be retrained or saved again with matching features.")
+        st.code(f"{type(exc).__name__}: {exc}")
+        st.stop()
+
     rows = build_analysis_rows(input_values)
 
     st.markdown("---")
