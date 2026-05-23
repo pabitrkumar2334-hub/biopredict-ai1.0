@@ -400,22 +400,17 @@ def apply_dashboard_theme():
             margin: 0;
         }
 
-        .organ-svg-wrap {
-            min-height: 230px;
-            display: grid;
-            place-items: center;
+        .organ-svg {
+            width: min(100%, 360px);
+            height: 230px;
+            overflow: visible;
             border-radius: 14px;
             border: 1px solid rgba(77,163,255,.14);
             background:
                 radial-gradient(circle at 50% 50%, rgba(77,163,255,.12), transparent 46%),
                 rgba(255,255,255,.035);
-            overflow: hidden;
-        }
-
-        .organ-svg {
-            width: min(100%, 360px);
-            height: 230px;
-            overflow: visible;
+            padding: 14px;
+            box-sizing: border-box;
         }
 
         .organ-main {
@@ -443,12 +438,12 @@ def apply_dashboard_theme():
             animation: baseGlow 2.2s ease-in-out infinite;
         }
 
-        .organ-svg-wrap:hover .organ-main {
+        .organ-svg:hover .organ-main {
             animation-duration: 1.4s;
             filter: drop-shadow(0 0 28px var(--organ-tone));
         }
 
-        .organ-svg-wrap:hover .organ-secondary {
+        .organ-svg:hover .organ-secondary {
             stroke-dashoffset: -34;
         }
 
@@ -1214,14 +1209,7 @@ def render_organ_visual(disease):
             unsafe_allow_html=True,
         )
     with col2:
-        st.markdown(
-            f"""
-            <div class="organ-svg-wrap">
-                {organ_svg_markup(disease)}
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+        st.markdown(organ_svg_markup(disease), unsafe_allow_html=True)
 
 
 def render_disease_intelligence(disease):
