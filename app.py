@@ -1084,6 +1084,247 @@ def render_hero():
     )
 
 
+def render_dna_hero():
+    from textwrap import dedent
+
+    st.markdown(dedent("""\
+        <style>
+        .dna-hero-wrap {
+            position: relative;
+            min-height: 280px;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            background:
+                radial-gradient(circle at 15% 50%, rgba(39,231,194,.09), transparent 35%),
+                radial-gradient(circle at 85% 50%, rgba(77,163,255,.11), transparent 35%),
+                linear-gradient(135deg, #050b16 0%, #081426 60%, #030611 100%);
+            border-bottom: 1px solid rgba(77,163,255,.18);
+            padding: 28px 32px 32px 32px;
+            margin-bottom: 24px;
+            border-radius: 0 0 20px 20px;
+        }
+        .dna-hero-text {
+            flex: 1;
+            max-width: 580px;
+            z-index: 2;
+        }
+        .dna-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #69f4d8;
+            background: rgba(39,231,194,.08);
+            border: 1px solid rgba(39,231,194,.22);
+            border-radius: 999px;
+            padding: 5px 14px;
+            font-weight: 800;
+            font-size: .75rem;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-bottom: 14px;
+        }
+        .dna-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #27e7c2;
+            box-shadow: 0 0 10px #27e7c2;
+            animation: dotPulse 1.8s ease-in-out infinite;
+        }
+        @keyframes dotPulse {
+            0%, 100% { transform: scale(.8); opacity: .6; }
+            50% { transform: scale(1.2); opacity: 1; }
+        }
+        .dna-hero-h1 {
+            font-size: clamp(2rem, 4.5vw, 3.8rem);
+            font-weight: 900;
+            color: #fff;
+            line-height: 1.06;
+            margin: 0 0 12px 0;
+            text-shadow: 0 4px 14px rgba(0,0,0,.4);
+        }
+        .dna-hero-sub {
+            color: #9fc1e7;
+            font-size: 1.05rem;
+            line-height: 1.58;
+            margin: 0 0 22px 0;
+            max-width: 520px;
+        }
+        .dna-stat-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .dna-stat {
+            min-width: 120px;
+            background: rgba(255,255,255,.04);
+            border: 1px solid rgba(77,163,255,.14);
+            border-radius: 10px;
+            padding: 11px 15px;
+            text-align: center;
+            backdrop-filter: blur(8px);
+            transition: transform .3s ease, border-color .3s ease;
+        }
+        .dna-stat:hover {
+            transform: translateY(-3px);
+            border-color: rgba(39,231,194,.35);
+        }
+        .dna-stat strong {
+            display: block;
+            color: #69f4d8;
+            font-size: 1.35rem;
+            text-shadow: 0 0 10px rgba(105,244,216,.3);
+        }
+        .dna-stat span {
+            color: #8fb2d8;
+            font-size: .82rem;
+        }
+        .dna-canvas {
+            position: absolute;
+            right: 32px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 200px;
+            height: 244px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            perspective: 700px;
+            z-index: 1;
+            animation: helixFloat 5s ease-in-out infinite;
+        }
+        @keyframes helixFloat {
+            0%, 100% { transform: translateY(calc(-50% + 0px)); }
+            50% { transform: translateY(calc(-50% - 9px)); }
+        }
+        @keyframes helixSpin {
+            from { transform: rotateY(0deg); }
+            to { transform: rotateY(360deg); }
+        }
+        .bp {
+            width: 160px;
+            height: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            animation: helixSpin 4s linear infinite;
+            transform-style: preserve-3d;
+        }
+        .bp::before {
+            content: '';
+            position: absolute;
+            left: 13px;
+            right: 13px;
+            top: 50%;
+            height: 1.5px;
+            background: linear-gradient(90deg, rgba(39,231,194,.55), rgba(105,200,255,.4), rgba(77,163,255,.55));
+            transform: translateY(-50%);
+        }
+        .bp-node {
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 2;
+        }
+        .bp-node.left {
+            background: radial-gradient(circle at 35% 35%, #fff, #27e7c2, #0a5c50);
+            box-shadow: 0 0 10px rgba(39,231,194,.75);
+        }
+        .bp-node.right {
+            background: radial-gradient(circle at 35% 35%, #fff, #4da3ff, #0a2a5c);
+            box-shadow: 0 0 10px rgba(77,163,255,.75);
+        }
+        .bp:nth-child(1) { animation-delay: 0s; }
+        .bp:nth-child(2) { animation-delay: -0.29s; }
+        .bp:nth-child(3) { animation-delay: -0.57s; }
+        .bp:nth-child(4) { animation-delay: -0.86s; }
+        .bp:nth-child(5) { animation-delay: -1.14s; }
+        .bp:nth-child(6) { animation-delay: -1.43s; }
+        .bp:nth-child(7) { animation-delay: -1.71s; }
+        .bp:nth-child(8) { animation-delay: -2s; }
+        .bp:nth-child(9) { animation-delay: -2.29s; }
+        .bp:nth-child(10) { animation-delay: -2.57s; }
+        .bp:nth-child(11) { animation-delay: -2.86s; }
+        .bp:nth-child(12) { animation-delay: -3.14s; }
+        .bp:nth-child(13) { animation-delay: -3.43s; }
+        .bp:nth-child(14) { animation-delay: -3.71s; }
+        .dna-orb {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        .dna-orb-1 {
+            width: 210px;
+            height: 210px;
+            background: radial-gradient(circle, rgba(39,231,194,.07), transparent 65%);
+            top: 50%;
+            right: 15px;
+            transform: translateY(-50%);
+            animation: orbScale 3.5s ease-in-out infinite;
+        }
+        .dna-orb-2 {
+            width: 140px;
+            height: 140px;
+            background: radial-gradient(circle, rgba(77,163,255,.08), transparent 65%);
+            top: 12%;
+            right: 65px;
+            animation: orbScale 4.5s ease-in-out infinite reverse;
+        }
+        @keyframes orbScale {
+            0%, 100% { opacity: .7; transform: translateY(-50%) scale(1); }
+            50% { opacity: 1; transform: translateY(-50%) scale(1.18); }
+        }
+        @media (max-width: 820px) {
+            .dna-canvas {
+                opacity: .15;
+                right: -20px;
+            }
+        }
+        </style>
+        <div class="dna-hero-wrap">
+          <div class="dna-orb dna-orb-1"></div>
+          <div class="dna-orb dna-orb-2"></div>
+          <div class="dna-hero-text">
+            <div class="dna-pill">
+              <span class="dna-dot"></span>AI-powered blood analysis
+            </div>
+            <h1 class="dna-hero-h1">Organ-level disease<br>risk intelligence</h1>
+            <p class="dna-hero-sub">
+              Input your blood report values to get instant risk scores,
+              biomarker comparison, downloadable reports, and estimated
+              future health projections.
+            </p>
+            <div class="dna-stat-row">
+              <div class="dna-stat"><strong>4</strong><span>Organs monitored</span></div>
+              <div class="dna-stat"><strong>12+</strong><span>Disease signals</span></div>
+              <div class="dna-stat"><strong>PDF</strong><span>Medical report</span></div>
+            </div>
+          </div>
+          <div class="dna-canvas">
+            <div class="bp"><span class="bp-node left"></span><span class="bp-node right"></span></div>
+            <div class="bp"><span class="bp-node left"></span><span class="bp-node right"></span></div>
+            <div class="bp"><span class="bp-node left"></span><span class="bp-node right"></span></div>
+            <div class="bp"><span class="bp-node left"></span><span class="bp-node right"></span></div>
+            <div class="bp"><span class="bp-node left"></span><span class="bp-node right"></span></div>
+            <div class="bp"><span class="bp-node left"></span><span class="bp-node right"></span></div>
+            <div class="bp"><span class="bp-node left"></span><span class="bp-node right"></span></div>
+            <div class="bp"><span class="bp-node left"></span><span class="bp-node right"></span></div>
+            <div class="bp"><span class="bp-node left"></span><span class="bp-node right"></span></div>
+            <div class="bp"><span class="bp-node left"></span><span class="bp-node right"></span></div>
+            <div class="bp"><span class="bp-node left"></span><span class="bp-node right"></span></div>
+            <div class="bp"><span class="bp-node left"></span><span class="bp-node right"></span></div>
+            <div class="bp"><span class="bp-node left"></span><span class="bp-node right"></span></div>
+            <div class="bp"><span class="bp-node left"></span><span class="bp-node right"></span></div>
+          </div>
+        </div>
+    """), unsafe_allow_html=True)
+
+
 def render_sidebar(selected):
     cards = []
     for disease, data in ORGAN_DATA.items():
@@ -2554,7 +2795,7 @@ def render_specific_disease_patterns(disease, input_values, report_values, model
 
 
 apply_dashboard_theme()
-render_hero()
+render_dna_hero()
 
 
 disease = st.sidebar.selectbox(
