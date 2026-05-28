@@ -1,5 +1,4 @@
 import streamlit as st
-import streamlit.components.v1 as components
 import pickle
 import pandas as pd
 import plotly.graph_objects as go
@@ -10,7 +9,6 @@ from datetime import datetime
 import re
 import hashlib
 from io import BytesIO
-from textwrap import dedent
 
 try:
     from PIL import Image, ImageOps, ImageFilter
@@ -146,7 +144,7 @@ def apply_dashboard_theme():
         <style>
         :root {
             --bg: #050b16;
-            --panel: rgba(12, 22, 38, 0.72);
+            --panel: rgba(12, 22, 38, 0.78);
             --panel-strong: rgba(15, 26, 46, 0.94);
             --line: rgba(66, 190, 255, 0.18);
             --text: #f5f8ff;
@@ -155,37 +153,14 @@ def apply_dashboard_theme():
             --blue: #4da3ff;
             --warning: #ffb02e;
             --danger: #ff5a67;
-            --shadow-3d: 0 20px 40px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.08);
-        }
-
-        /* 3D Global Perspective */
-        body {
-            perspective: 1200px;
         }
 
         .stApp {
             background:
-                radial-gradient(circle at 12% 18%, rgba(39, 231, 194, 0.09), transparent 28%),
-                radial-gradient(circle at 88% 8%, rgba(77, 163, 255, 0.12), transparent 32%),
+                radial-gradient(circle at 12% 18%, rgba(39, 231, 194, 0.12), transparent 28%),
+                radial-gradient(circle at 88% 8%, rgba(77, 163, 255, 0.15), transparent 32%),
                 linear-gradient(135deg, #050b16 0%, #081426 48%, #030611 100%);
             color: var(--text);
-            font-family: 'Outfit', 'Inter', sans-serif;
-        }
-
-        /* Scrollbar Styling */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: rgba(5, 11, 22, 0.5);
-        }
-        ::-webkit-scrollbar-thumb {
-            background: rgba(77, 163, 255, 0.25);
-            border-radius: 99px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: rgba(39, 231, 194, 0.5);
         }
 
         .block-container {
@@ -195,7 +170,7 @@ def apply_dashboard_theme():
 
         section[data-testid="stSidebar"] {
             background: linear-gradient(180deg, rgba(6, 15, 28, 0.98), rgba(3, 8, 17, 0.98));
-            border-right: 1px solid rgba(77, 163, 255, 0.15);
+            border-right: 1px solid rgba(39, 231, 194, 0.18);
         }
 
         h1, h2, h3, label, p {
@@ -204,51 +179,6 @@ def apply_dashboard_theme():
 
         h1, h2, h3 {
             color: #ffffff;
-            text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-        }
-
-        /* Interactive 3D Cards */
-        .section-panel,
-        .result-card,
-        .input-console,
-        .upload-panel,
-        .disease-risk-card,
-        .intel-card,
-        .stat-card,
-        .marker-card {
-            background: var(--panel) !important;
-            border: 1px solid rgba(77, 163, 255, 0.16) !important;
-            border-radius: 16px !important;
-            padding: 20px !important;
-            margin: 14px 0 20px 0 !important;
-            box-shadow: var(--shadow-3d) !important;
-            backdrop-filter: blur(12px) !important;
-            transform-style: preserve-3d;
-            transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), 
-                        box-shadow 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), 
-                        border-color 0.4s cubic-bezier(0.25, 0.8, 0.25, 1),
-                        background 0.4s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
-        }
-
-        /* Hover Tilt and Lighting Effects */
-        .section-panel:hover,
-        .input-console:hover,
-        .upload-panel:hover {
-            transform: translateY(-3px) translateZ(5px);
-            border-color: rgba(39, 231, 194, 0.3) !important;
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.15) !important;
-        }
-
-        .disease-risk-card:hover,
-        .intel-card:hover,
-        .stat-card:hover,
-        .marker-card:hover {
-            transform: perspective(800px) rotateX(3deg) rotateY(-3deg) translateZ(10px) translateY(-4px);
-            border-color: rgba(39, 231, 194, 0.4) !important;
-            background: rgba(15, 27, 48, 0.85) !important;
-            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.6), 
-                        0 0 25px rgba(77, 163, 255, 0.18),
-                        inset 0 1px 2px rgba(255, 255, 255, 0.2) !important;
         }
 
         div[data-testid="stMetric"],
@@ -258,39 +188,30 @@ def apply_dashboard_theme():
             border: 1px solid rgba(77, 163, 255, 0.16);
             border-radius: 12px;
             padding: 10px;
-            box-shadow: inset 0 2px 8px rgba(0,0,0,0.3);
         }
 
         input, textarea, div[data-baseweb="select"] > div {
-            background: rgba(255, 255, 255, 0.05) !important;
-            border: 1px solid rgba(77, 163, 255, 0.16) !important;
+            background: rgba(255, 255, 255, 0.06) !important;
+            border: 1px solid rgba(77, 163, 255, 0.20) !important;
             border-radius: 10px !important;
             color: #ffffff !important;
-            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2) !important;
-            transition: all 0.25s ease !important;
-        }
-
-        input:focus, textarea:focus, div[data-baseweb="select"] > div:focus-within {
-            border-color: var(--cyan) !important;
-            box-shadow: 0 0 10px rgba(39, 231, 194, 0.25), inset 0 2px 4px rgba(0, 0, 0, 0.2) !important;
         }
 
         div[data-testid="stTextInput"],
         div[data-testid="stSelectbox"] {
-            background: rgba(255,255,255,.02);
-            border: 1px solid rgba(77,163,255,.1);
+            background: rgba(255,255,255,.035);
+            border: 1px solid rgba(77,163,255,.12);
             border-radius: 12px;
             padding: 10px 12px 12px 12px;
             margin-bottom: 8px;
-            transition: all .25s ease;
+            transition: border-color .18s ease, background .18s ease, transform .18s ease;
         }
 
         div[data-testid="stTextInput"]:hover,
         div[data-testid="stSelectbox"]:hover {
-            border-color: rgba(39,231,194,.3);
-            background: rgba(39,231,194,.03);
-            transform: translateY(-1px) translateZ(2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border-color: rgba(39,231,194,.34);
+            background: rgba(39,231,194,.045);
+            transform: translateY(-1px);
         }
 
         div[data-testid="stTextInput"] label,
@@ -299,46 +220,35 @@ def apply_dashboard_theme():
             font-weight: 800 !important;
             text-transform: uppercase;
             font-size: .78rem;
-            letter-spacing: 0.5px;
         }
 
-        /* 3D Action Buttons */
         .stButton > button,
         .stDownloadButton > button {
-            background: linear-gradient(135deg, #27e7c2, #1eb4ff) !important;
+            background: linear-gradient(90deg, #27e7c2, #4da3ff) !important;
             color: #04101e !important;
-            border: 1px solid rgba(255, 255, 255, 0.15) !important;
-            border-radius: 12px !important;
+            border: 0 !important;
+            border-radius: 10px !important;
             min-height: 3.1rem;
             font-size: 1.02rem;
             font-weight: 800;
-            text-shadow: 0 1px 1px rgba(255, 255, 255, 0.2);
-            box-shadow: 0 10px 25px rgba(39, 231, 194, 0.2), inset 0 2px 0 rgba(255,255,255,0.2) !important;
-            transition: all .25s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+            box-shadow: 0 0 28px rgba(39, 231, 194, 0.25);
+            transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
         }
 
         .stButton > button:hover,
         .stDownloadButton > button:hover {
-            transform: translateY(-3px) scale(1.01) translateZ(10px) !important;
-            filter: brightness(1.1);
-            box-shadow: 0 15px 35px rgba(39, 231, 194, 0.35), 0 0 15px rgba(77, 163, 255, 0.2), inset 0 2px 0 rgba(255,255,255,0.3) !important;
+            transform: translateY(-2px);
+            filter: brightness(1.08);
+            box-shadow: 0 0 38px rgba(39, 231, 194, 0.42);
         }
 
-        .stButton > button:active,
-        .stDownloadButton > button:active {
-            transform: translateY(1px) !important;
-            box-shadow: 0 5px 12px rgba(39, 231, 194, 0.2) !important;
-        }
-
-        /* Hero Banner & Interactive DNA Stage */
         .hero {
             position: relative;
             overflow: hidden;
             min-height: 270px;
-            border-bottom: 1px solid rgba(77, 163, 255, 0.18);
-            padding: 20px 0 26px 0;
+            border-bottom: 1px solid rgba(39, 231, 194, 0.20);
+            padding: 18px 0 26px 0;
             margin-bottom: 22px;
-            transform-style: preserve-3d;
         }
 
         .hero-pill {
@@ -346,16 +256,12 @@ def apply_dashboard_theme():
             align-items: center;
             gap: 9px;
             color: #69f4d8;
-            background: rgba(39, 231, 194, 0.08);
-            border: 1px solid rgba(39, 231, 194, 0.22);
+            background: rgba(39, 231, 194, 0.10);
+            border: 1px solid rgba(39, 231, 194, 0.28);
             border-radius: 999px;
             padding: 6px 16px;
             font-weight: 800;
             margin-bottom: 16px;
-            text-transform: uppercase;
-            font-size: 0.78rem;
-            letter-spacing: 1px;
-            box-shadow: 0 0 15px rgba(39, 231, 194, 0.05);
         }
 
         .hero-dot {
@@ -370,9 +276,8 @@ def apply_dashboard_theme():
         .hero h1 {
             max-width: 620px;
             font-size: clamp(2.1rem, 5vw, 4.2rem);
-            line-height: 1.05;
+            line-height: 1.02;
             margin: 0 0 12px 0;
-            font-weight: 900;
         }
 
         .hero-copy {
@@ -391,8 +296,12 @@ def apply_dashboard_theme():
 
         .stat-card {
             min-width: 142px;
-            padding: 14px 18px !important;
+            background: rgba(255,255,255,0.045);
+            border: 1px solid rgba(143,178,216,0.20);
+            border-radius: 10px;
+            padding: 13px 16px;
             text-align: center;
+            backdrop-filter: blur(8px);
             animation: riseIn .7s ease both;
         }
 
@@ -401,7 +310,6 @@ def apply_dashboard_theme():
             color: #69f4d8;
             font-size: 1.45rem;
             line-height: 1.1;
-            text-shadow: 0 0 10px rgba(105, 244, 216, 0.3);
         }
 
         .stat-card span {
@@ -411,22 +319,88 @@ def apply_dashboard_theme():
 
         .dna-stage {
             position: absolute;
-            right: 15px;
+            right: 10px;
             top: 4px;
-            width: 280px;
+            width: 285px;
             height: 250px;
             opacity: .95;
             perspective: 900px;
-            cursor: grab;
         }
-        .dna-stage:active {
-            cursor: grabbing;
+
+        .dna-helix-svg {
+            width: 100%;
+            height: 100%;
+            overflow: visible;
+            filter: drop-shadow(0 0 18px rgba(39,231,194,.24));
+            animation: dnaFloat3d 6s ease-in-out infinite;
+            transform-origin: center;
         }
+
+        .dna-stage:hover .dna-helix-svg {
+            animation-duration: 2.2s;
+            transform: rotateY(18deg) scale(1.04);
+        }
+
+        .dna-strand-a,
+        .dna-strand-b {
+            fill: none;
+            stroke-width: 5;
+            stroke-linecap: round;
+            stroke-dasharray: 10 12;
+            animation: strandFlow 3.4s linear infinite;
+        }
+
+        .dna-strand-a { stroke: #27e7c2; }
+        .dna-strand-b { stroke: #4da3ff; animation-delay: -.8s; }
+
+        .h-bond {
+            stroke: rgba(175, 220, 255, .72);
+            stroke-width: 2;
+            stroke-dasharray: 4 6;
+            animation: bondPulse 2.4s ease-in-out infinite;
+        }
+
+        .base-node {
+            fill: #07111f;
+            stroke-width: 3;
+            animation: baseGlow 2.8s ease-in-out infinite;
+        }
+
+        .node-a { stroke: #27e7c2; }
+        .node-b { stroke: #4da3ff; }
+
+        .dna-label {
+            fill: #8fb2d8;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            opacity: .9;
+        }
+
+        .orb {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #27e7c2;
+            box-shadow: 0 0 14px currentColor;
+            animation: floatOrb 3.2s ease-in-out infinite;
+        }
+
+        .orb.o1 { left: 50px; top: 10px; color: #27e7c2; }
+        .orb.o2 { right: 42px; top: 18px; color: #4da3ff; animation-delay: .25s; }
+        .orb.o3 { left: 28px; top: 88px; color: #27e7c2; animation-delay: .5s; }
+        .orb.o4 { right: 26px; top: 130px; color: #4da3ff; animation-delay: .75s; }
 
         .organ-visual-intro {
             background:
-                radial-gradient(circle at 82% 35%, rgba(39,231,194,.08), transparent 35%),
-                rgba(12, 22, 38, 0.62) !important;
+                radial-gradient(circle at 82% 35%, rgba(39,231,194,.10), transparent 35%),
+                rgba(12, 22, 38, 0.62);
+            border: 1px solid rgba(77, 163, 255, 0.16);
+            border-radius: 16px;
+            padding: 18px;
+            margin: 12px 0 20px 0;
+            box-shadow: 0 20px 60px rgba(0,0,0,.18);
         }
 
         .organ-copy h2 {
@@ -443,28 +417,20 @@ def apply_dashboard_theme():
             width: min(100%, 360px);
             height: 230px;
             overflow: visible;
-            border-radius: 16px;
+            border-radius: 14px;
             border: 1px solid rgba(77,163,255,.14);
             background:
                 radial-gradient(circle at 50% 50%, rgba(77,163,255,.12), transparent 46%),
-                rgba(255,255,255,.03);
+                rgba(255,255,255,.035);
             padding: 14px;
             box-sizing: border-box;
-            box-shadow: var(--shadow-3d);
-            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-        }
-
-        .organ-svg:hover {
-            transform: perspective(800px) rotateX(4deg) rotateY(-4deg) scale(1.02);
-            border-color: var(--organ-tone);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.5), 0 0 25px rgba(77, 163, 255, 0.15);
         }
 
         .organ-main {
-            fill: rgba(39,231,194,.06);
+            fill: rgba(39,231,194,.16);
             stroke: var(--organ-tone);
             stroke-width: 3;
-            filter: drop-shadow(0 0 12px var(--organ-tone));
+            filter: drop-shadow(0 0 18px rgba(39,231,194,.25));
             transform-origin: center;
             animation: organBreathe 3.4s ease-in-out infinite;
         }
@@ -472,10 +438,10 @@ def apply_dashboard_theme():
         .organ-secondary {
             fill: none;
             stroke: rgba(143,178,216,.75);
-            stroke-width: 2.2;
+            stroke-width: 2;
             stroke-linecap: round;
-            stroke-dasharray: 8 10;
-            animation: vesselFlow 3.2s linear infinite;
+            stroke-dasharray: 7 9;
+            animation: vesselFlow 3s linear infinite;
         }
 
         .organ-node {
@@ -486,9 +452,21 @@ def apply_dashboard_theme():
         }
 
         .organ-svg:hover .organ-main {
-            animation-duration: 1.6s;
-            filter: drop-shadow(0 0 22px var(--organ-tone));
-            fill: rgba(39,231,194,.12);
+            animation-duration: 1.4s;
+            filter: drop-shadow(0 0 28px var(--organ-tone));
+        }
+
+        .organ-svg:hover .organ-secondary {
+            stroke-dashoffset: -34;
+        }
+
+        .section-panel {
+            background: rgba(12, 22, 38, 0.62);
+            border: 1px solid rgba(77, 163, 255, 0.16);
+            border-radius: 14px;
+            padding: 18px;
+            margin: 12px 0 18px 0;
+            box-shadow: 0 20px 60px rgba(0,0,0,.18);
         }
 
         .organ-heading {
@@ -516,6 +494,9 @@ def apply_dashboard_theme():
 
         .marker-card {
             min-height: 94px;
+            background: rgba(255,255,255,.045);
+            border: 1px solid rgba(77,163,255,.16);
+            border-radius: 12px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -528,25 +509,24 @@ def apply_dashboard_theme():
             width: 42px;
             height: 42px;
             border-radius: 50%;
-            border: 1px solid rgba(39,231,194,.4);
+            border: 1px solid rgba(39,231,194,.55);
             position: relative;
-            box-shadow: inset 0 0 18px rgba(39,231,194,.1);
-            background: rgba(39,231,194,0.05);
+            box-shadow: inset 0 0 18px rgba(39,231,194,.13);
         }
 
         .marker-icon:before,
         .marker-icon:after {
             content: "";
             position: absolute;
-            width: 8px;
-            height: 8px;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
             background: #27e7c2;
             box-shadow: 0 0 12px #27e7c2;
         }
 
-        .marker-icon:before { left: 7px; top: 10px; }
-        .marker-icon:after { right: 8px; bottom: 9px; background: #4da3ff; }
+        .marker-icon:before { left: 5px; top: 8px; }
+        .marker-icon:after { right: 6px; bottom: 7px; background: #4da3ff; }
 
         .marker-card strong { color: #dcecff; }
         .marker-card span { color: #6fa9dd; font-size: .82rem; text-align: center; }
@@ -556,25 +536,17 @@ def apply_dashboard_theme():
             align-items: center;
             justify-content: space-between;
             gap: 10px;
-            background: rgba(255,255,255,.03);
-            border: 1px solid rgba(77,163,255,.1);
+            background: rgba(255,255,255,.045);
+            border: 1px solid rgba(77,163,255,.14);
             border-radius: 12px;
-            padding: 12px 14px;
+            padding: 12px 13px;
             margin-bottom: 10px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            transition: all 0.3s ease;
-        }
-
-        .organ-card:hover {
-            transform: translateY(-2px) translateZ(4px);
-            border-color: rgba(77, 163, 255, 0.3);
-            background: rgba(255,255,255,.05);
         }
 
         .organ-card.active {
-            border-color: rgba(39,231,194,.7) !important;
-            background: rgba(39,231,194,.08) !important;
-            box-shadow: 0 8px 24px rgba(39,231,194,.15) !important;
+            border-color: rgba(39,231,194,.75);
+            background: rgba(39,231,194,.08);
+            box-shadow: 0 0 22px rgba(39,231,194,.10);
         }
 
         .organ-left {
@@ -612,7 +584,6 @@ def apply_dashboard_theme():
             padding: 3px 8px;
             font-size: .72rem;
             font-weight: 900;
-            box-shadow: 0 2px 8px rgba(39, 231, 194, 0.3);
         }
 
         .blood-viewer {
@@ -625,32 +596,29 @@ def apply_dashboard_theme():
                 radial-gradient(circle at 50% 50%, rgba(77,163,255,.10), transparent 42%),
                 rgba(255,255,255,.03);
             margin-top: 10px;
-            box-shadow: inset 0 4px 20px rgba(0,0,0,0.4);
-            perspective: 500px;
         }
 
         .cell {
             position: absolute;
             border-radius: 50%;
-            border: 1px solid rgba(255,90,103,.5);
-            background: radial-gradient(circle at 35% 35%, rgba(255,90,103,.5), rgba(80,25,80,.4));
-            box-shadow: 0 5px 15px rgba(255,90,103,.2);
+            border: 1px solid rgba(255,90,103,.6);
+            background: radial-gradient(circle at 50% 50%, rgba(255,90,103,.45), rgba(80,25,80,.40));
+            box-shadow: 0 0 18px rgba(255,90,103,.18);
             animation: drift 6s ease-in-out infinite alternate;
         }
 
-        .cell.c1 { width: 24px; height: 16px; left: 14%; top: 28%; }
-        .cell.c2 { width: 38px; height: 26px; left: 42%; top: 44%; animation-delay: .6s; }
-        .cell.c3 { width: 22px; height: 14px; right: 18%; top: 30%; animation-delay: 1s; }
+        .cell.c1 { width: 22px; height: 14px; left: 14%; top: 28%; }
+        .cell.c2 { width: 38px; height: 24px; left: 42%; top: 44%; animation-delay: .6s; }
+        .cell.c3 { width: 20px; height: 13px; right: 18%; top: 30%; animation-delay: 1s; }
         .cell.c4 { width: 20px; height: 13px; left: 10%; bottom: 20%; animation-delay: 1.4s; }
-        .cell.c5 { width: 26px; height: 16px; right: 10%; bottom: 18%; animation-delay: 1.8s; }
+        .cell.c5 { width: 24px; height: 14px; right: 10%; bottom: 18%; animation-delay: 1.8s; }
 
         .wbc {
             position: absolute;
-            width: 14px;
-            height: 14px;
+            width: 12px;
+            height: 12px;
             border-radius: 50%;
             border: 1px solid #4da3ff;
-            background: radial-gradient(circle at 30% 30%, #ffffff, #4da3ff);
             box-shadow: 0 0 12px rgba(77,163,255,.45);
             animation: floatOrb 4s ease-in-out infinite;
         }
@@ -665,16 +633,10 @@ def apply_dashboard_theme():
         }
 
         .projection-card {
-            background: rgba(255,255,255,.03);
-            border: 1px solid rgba(77,163,255,.12);
+            background: rgba(255,255,255,.045);
+            border: 1px solid rgba(77,163,255,.16);
             border-radius: 12px;
             padding: 14px;
-            box-shadow: var(--shadow-3d);
-            transition: all 0.3s ease;
-        }
-        .projection-card:hover {
-            transform: translateY(-2px) scale(1.02);
-            border-color: rgba(39, 231, 194, 0.25);
         }
 
         .projection-card span {
@@ -687,7 +649,17 @@ def apply_dashboard_theme():
             display: block;
             font-size: 1.35rem;
             margin-top: 4px;
-            text-shadow: 0 0 8px rgba(255,255,255,0.15);
+        }
+
+        .input-console {
+            background:
+                linear-gradient(135deg, rgba(15,26,46,.94), rgba(6,15,28,.82)),
+                radial-gradient(circle at 88% 22%, rgba(77,163,255,.12), transparent 34%);
+            border: 1px solid rgba(77,163,255,.18);
+            border-radius: 16px;
+            padding: 18px;
+            margin: 16px 0 18px 0;
+            box-shadow: 0 18px 55px rgba(0,0,0,.18);
         }
 
         .input-console-top {
@@ -695,6 +667,16 @@ def apply_dashboard_theme():
             align-items: flex-start;
             justify-content: space-between;
             gap: 18px;
+        }
+
+        .input-console h2 {
+            margin: 0 0 8px 0;
+        }
+
+        .input-console p {
+            color: #9fc1e7;
+            margin: 0;
+            line-height: 1.5;
         }
 
         .console-chip-row {
@@ -705,18 +687,37 @@ def apply_dashboard_theme():
         }
 
         .console-chip {
-            background: rgba(255,255,255,.04);
-            border: 1px solid rgba(77,163,255,.14);
+            background: rgba(255,255,255,.045);
+            border: 1px solid rgba(77,163,255,.16);
             border-radius: 999px;
-            padding: 7px 14px;
+            padding: 7px 12px;
             color: #cfe6ff;
             font-size: .84rem;
             font-weight: 750;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
         }
 
         .console-chip b {
             color: #69f4d8;
+        }
+
+        .upload-panel {
+            background:
+                linear-gradient(135deg, rgba(39,231,194,.08), rgba(77,163,255,.06)),
+                rgba(255,255,255,.035);
+            border: 1px solid rgba(39,231,194,.22);
+            border-radius: 16px;
+            padding: 18px;
+            margin: 14px 0 20px 0;
+        }
+
+        .upload-panel h2 {
+            margin: 0 0 8px 0;
+        }
+
+        .upload-panel p {
+            color: #9fc1e7;
+            margin: 0;
+            line-height: 1.5;
         }
 
         .extraction-list {
@@ -727,13 +728,12 @@ def apply_dashboard_theme():
         }
 
         .extract-pill {
-            background: rgba(255,255,255,.04);
-            border: 1px solid rgba(77,163,255,.14);
+            background: rgba(255,255,255,.045);
+            border: 1px solid rgba(77,163,255,.16);
             border-radius: 10px;
             padding: 9px 11px;
             color: #dcecff;
             font-size: .86rem;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
         }
 
         .extract-pill b {
@@ -748,6 +748,10 @@ def apply_dashboard_theme():
         }
 
         .intel-card {
+            background: rgba(255,255,255,.045);
+            border: 1px solid rgba(77,163,255,.16);
+            border-radius: 12px;
+            padding: 14px;
             min-height: 108px;
         }
 
@@ -766,14 +770,17 @@ def apply_dashboard_theme():
             line-height: 1.32;
         }
 
-        /* 3D Dial Risk assessment dashboard */
         .result-card {
             position: relative;
             overflow: hidden;
             background:
                 linear-gradient(135deg, rgba(15, 26, 46, .96), rgba(6, 15, 28, .86)),
-                radial-gradient(circle at 85% 18%, rgba(39,231,194,.15), transparent 35%) !important;
-            border: 1px solid rgba(39,231,194,.22) !important;
+                radial-gradient(circle at 85% 18%, rgba(39,231,194,.18), transparent 35%);
+            border: 1px solid rgba(39,231,194,.22);
+            border-radius: 16px;
+            padding: 22px;
+            margin: 4px 0 18px 0;
+            box-shadow: 0 24px 70px rgba(0,0,0,.25);
         }
 
         .result-card:after {
@@ -784,7 +791,7 @@ def apply_dashboard_theme():
             width: 40%;
             height: 100%;
             background: linear-gradient(90deg, transparent, rgba(255,255,255,.08), transparent);
-            animation: resultScan 3.5s ease-in-out infinite;
+            animation: resultScan 3s ease-in-out infinite;
         }
 
         .result-top {
@@ -796,28 +803,24 @@ def apply_dashboard_theme():
             z-index: 1;
         }
 
-        /* Concave Instrument Dial Look */
         .risk-ring {
             width: 132px;
             height: 132px;
             border-radius: 50%;
             display: grid;
             place-items: center;
-            background: conic-gradient(var(--risk-color) var(--risk-angle), rgba(255,255,255,.04) 0);
-            box-shadow: 0 0 0 6px rgba(0,0,0,0.3), 0 10px 25px rgba(0,0,0,0.6), 0 0 25px var(--risk-color);
-            position: relative;
-            transform: translateZ(20px);
+            background: conic-gradient(var(--risk-color) var(--risk-angle), rgba(255,255,255,.08) 0);
+            box-shadow: 0 0 32px rgba(39,231,194,.14);
         }
 
         .risk-ring-inner {
             width: 102px;
             height: 102px;
             border-radius: 50%;
-            background: radial-gradient(circle at 35% 35%, #0c182d, #050b16);
+            background: #07111f;
             display: grid;
             place-items: center;
             text-align: center;
-            box-shadow: inset 0 5px 15px rgba(0,0,0,0.85), inset 0 -2px 6px rgba(255,255,255,0.06);
             border: 1px solid rgba(255,255,255,.08);
         }
 
@@ -825,7 +828,6 @@ def apply_dashboard_theme():
             color: white;
             font-size: 1.45rem;
             line-height: 1;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
 
         .risk-ring-inner span {
@@ -865,18 +867,11 @@ def apply_dashboard_theme():
         }
 
         .mini-action {
-            background: rgba(255,255,255,.03);
+            background: rgba(255,255,255,.045);
             border: 1px solid rgba(77,163,255,.14);
             border-radius: 12px;
             padding: 12px;
             color: #dcecff;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-            transition: all 0.3s ease;
-        }
-        .mini-action:hover {
-            transform: translateY(-2px);
-            border-color: rgba(77, 163, 255, 0.25);
-            background: rgba(255,255,255,.05);
         }
 
         .mini-action span {
@@ -893,6 +888,16 @@ def apply_dashboard_theme():
             grid-template-columns: repeat(2, 1fr);
             gap: 14px;
             margin-top: 14px;
+        }
+
+        .disease-risk-card {
+            background:
+                linear-gradient(135deg, rgba(15,26,46,.94), rgba(6,15,28,.82)),
+                rgba(255,255,255,.035);
+            border: 1px solid rgba(77,163,255,.18);
+            border-radius: 14px;
+            padding: 16px;
+            box-shadow: 0 16px 42px rgba(0,0,0,.14);
         }
 
         .disease-risk-card h3 {
@@ -913,14 +918,12 @@ def apply_dashboard_theme():
             background: rgba(255,255,255,.08);
             overflow: hidden;
             margin: 7px 0 10px 0;
-            box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
         }
 
         .risk-fill {
             height: 100%;
             border-radius: 999px;
             background: linear-gradient(90deg, #27e7c2, #ffb02e, #ff5a67);
-            box-shadow: 0 0 8px rgba(39, 231, 194, 0.5);
         }
 
         .risk-row {
@@ -930,11 +933,10 @@ def apply_dashboard_theme():
         }
 
         .risk-mini {
-            background: rgba(255,255,255,.03);
-            border: 1px solid rgba(77,163,255,.12);
+            background: rgba(255,255,255,.045);
+            border: 1px solid rgba(77,163,255,.14);
             border-radius: 10px;
             padding: 9px;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
         }
 
         .risk-mini span {
@@ -950,45 +952,59 @@ def apply_dashboard_theme():
             font-size: 1.05rem;
         }
 
-        /* Upgraded animations */
         @keyframes pulse {
             0%, 100% { transform: scale(.88); opacity: .65; }
             50% { transform: scale(1.12); opacity: 1; }
         }
 
         @keyframes floatOrb {
-            0%, 100% { transform: translate(0, 0) translateZ(0); }
-            50% { transform: translate(6px, -8px) translateZ(10px); }
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(9px, -10px); }
+        }
+
+        @keyframes dnaFloat3d {
+            0%, 100% { transform: rotateY(-10deg) rotateZ(-2deg) translateY(0); }
+            50% { transform: rotateY(12deg) rotateZ(2deg) translateY(8px); }
+        }
+
+        @keyframes strandFlow {
+            from { stroke-dashoffset: 0; }
+            to { stroke-dashoffset: -44; }
+        }
+
+        @keyframes bondPulse {
+            0%, 100% { opacity: .35; stroke-width: 1.4; }
+            50% { opacity: .95; stroke-width: 2.4; }
         }
 
         @keyframes baseGlow {
-            0%, 100% { opacity: .65; transform: scale(.94); }
-            50% { opacity: 1; transform: scale(1.06); }
+            0%, 100% { opacity: .65; transform: scale(.92); }
+            50% { opacity: 1; transform: scale(1.08); }
         }
 
         @keyframes organBreathe {
             0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.025); }
+            50% { transform: scale(1.035); }
         }
 
         @keyframes vesselFlow {
             from { stroke-dashoffset: 0; }
-            to { stroke-dashoffset: -36; }
+            to { stroke-dashoffset: -32; }
         }
 
         @keyframes riseIn {
-            from { transform: translateY(12px) translateZ(-10px); opacity: 0; }
-            to { transform: translateY(0) translateZ(0); opacity: 1; }
+            from { transform: translateY(10px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
         }
 
         @keyframes drift {
-            from { transform: translate(-4px, 3px) rotate(0deg); }
-            to { transform: translate(7px, -6px) rotate(12deg); }
+            from { transform: translate(-5px, 4px) rotate(0deg); }
+            to { transform: translate(9px, -8px) rotate(16deg); }
         }
 
         @keyframes resultScan {
             0% { left: -45%; }
-            60%, 100% { left: 120%; }
+            55%, 100% { left: 120%; }
         }
 
         @media (max-width: 900px) {
@@ -1024,155 +1040,45 @@ def render_hero():
                 <div class="stat-card"><strong>PDF</strong><span>Medical report</span></div>
             </div>
             <div class="dna-stage">
-                <canvas id="dnaCanvas" width="280" height="250" style="display:block; width:280px; height:250px;"></canvas>
+                <svg class="dna-helix-svg" viewBox="0 0 260 250" role="img" aria-label="Interactive DNA double helix">
+                    <defs>
+                        <linearGradient id="dnaA" x1="0" x2="1">
+                            <stop offset="0%" stop-color="#27e7c2"/>
+                            <stop offset="100%" stop-color="#64ffe8"/>
+                        </linearGradient>
+                        <linearGradient id="dnaB" x1="0" x2="1">
+                            <stop offset="0%" stop-color="#4da3ff"/>
+                            <stop offset="100%" stop-color="#9dbdff"/>
+                        </linearGradient>
+                    </defs>
+                    <path class="dna-strand-a" stroke="url(#dnaA)" d="M82 20 C178 48, 178 78, 82 106 C-14 134, -14 166, 82 194 C134 209, 170 222, 182 236"/>
+                    <path class="dna-strand-b" stroke="url(#dnaB)" d="M178 20 C82 48, 82 78, 178 106 C274 134, 274 166, 178 194 C126 209, 90 222, 78 236"/>
+                    <line class="h-bond" x1="88" y1="34" x2="172" y2="34"/>
+                    <line class="h-bond" x1="113" y1="62" x2="147" y2="62"/>
+                    <line class="h-bond" x1="84" y1="92" x2="176" y2="92"/>
+                    <line class="h-bond" x1="78" y1="124" x2="182" y2="124"/>
+                    <line class="h-bond" x1="86" y1="156" x2="174" y2="156"/>
+                    <line class="h-bond" x1="111" y1="186" x2="149" y2="186"/>
+                    <line class="h-bond" x1="84" y1="216" x2="176" y2="216"/>
+                    <circle class="base-node node-a" cx="88" cy="34" r="7"/>
+                    <circle class="base-node node-b" cx="172" cy="34" r="7"/>
+                    <circle class="base-node node-a" cx="113" cy="62" r="6"/>
+                    <circle class="base-node node-b" cx="147" cy="62" r="6"/>
+                    <circle class="base-node node-a" cx="84" cy="92" r="7"/>
+                    <circle class="base-node node-b" cx="176" cy="92" r="7"/>
+                    <circle class="base-node node-a" cx="78" cy="124" r="7"/>
+                    <circle class="base-node node-b" cx="182" cy="124" r="7"/>
+                    <circle class="base-node node-a" cx="86" cy="156" r="7"/>
+                    <circle class="base-node node-b" cx="174" cy="156" r="7"/>
+                    <circle class="base-node node-a" cx="111" cy="186" r="6"/>
+                    <circle class="base-node node-b" cx="149" cy="186" r="6"/>
+                    <circle class="base-node node-a" cx="84" cy="216" r="7"/>
+                    <circle class="base-node node-b" cx="176" cy="216" r="7"/>
+                    <text class="dna-label" x="12" y="236">H-BONDS</text>
+                    <text class="dna-label" x="176" y="18">DNA HELIX</text>
+                </svg>
             </div>
         </div>
-        <script>
-        (function() {
-            const canvas = document.getElementById('dnaCanvas');
-            if (!canvas) return;
-            const ctx = canvas.getContext('2d');
-            
-            const width = 280;
-            const height = 250;
-            
-            let angle = 0;
-            let scrollRotation = 0;
-            let targetScrollRotation = 0;
-            let mouseX = 0;
-            let mouseY = 0;
-            let hoverActive = false;
-            
-            // Listen to page scroll to rotate DNA helix
-            window.addEventListener('scroll', () => {
-                targetScrollRotation = window.scrollY * 0.0055;
-            }, { passive: true });
-            
-            canvas.addEventListener('mousemove', (e) => {
-                const rect = canvas.getBoundingClientRect();
-                mouseX = (e.clientX - rect.left - width / 2) / (width / 2);
-                mouseY = (e.clientY - rect.top - height / 2) / (height / 2);
-                hoverActive = true;
-            });
-            
-            canvas.addEventListener('mouseleave', () => {
-                mouseX = 0;
-                mouseY = 0;
-                hoverActive = false;
-            });
-            
-            const numNodes = 14;
-            const radius = 60;
-            const baseSpeed = 0.012;
-            
-            function draw() {
-                ctx.clearRect(0, 0, width, height);
-                
-                // Interpolate scroll position for inertia
-                scrollRotation += (targetScrollRotation - scrollRotation) * 0.1;
-                
-                const speed = baseSpeed + (hoverActive ? Math.abs(mouseX) * 0.025 : 0);
-                angle += speed;
-                
-                const totalAngle = angle + scrollRotation + (hoverActive ? mouseX * 0.4 : 0);
-                const tiltX = hoverActive ? mouseY * 0.25 : 0.05;
-                
-                let nodes = [];
-                for (let i = 0; i < numNodes; i++) {
-                    const progress = i / (numNodes - 1);
-                    const y = progress * (height - 60) + 30;
-                    
-                    const phase = progress * Math.PI * 2.3;
-                    
-                    // Strand A
-                    const thetaA = totalAngle + phase;
-                    let xA = Math.cos(thetaA) * radius;
-                    let zA = Math.sin(thetaA) * radius;
-                    let yA = y + zA * tiltX;
-                    
-                    // Strand B (180 degrees out of phase)
-                    const thetaB = totalAngle + phase + Math.PI;
-                    let xB = Math.cos(thetaB) * radius;
-                    let zB = Math.sin(thetaB) * radius;
-                    let yB = y + zB * tiltX;
-                    
-                    nodes.push({
-                        xA: xA + width / 2, yA: yA, zA: zA,
-                        xB: xB + width / 2, yB: yB, zB: zB
-                    });
-                }
-                
-                // Draw connecting hydrogen bonds with depth alpha
-                for (let i = 0; i < numNodes; i++) {
-                    const node = nodes[i];
-                    const avgZ = (node.zA + node.zB) / 2;
-                    const opacity = 0.12 + 0.48 * ((avgZ + radius) / (2 * radius));
-                    
-                    ctx.beginPath();
-                    ctx.moveTo(node.xA, node.yA);
-                    ctx.lineTo(node.xB, node.yB);
-                    
-                    const grad = ctx.createLinearGradient(node.xA, node.yA, node.xB, node.yB);
-                    grad.addColorStop(0, `rgba(39, 231, 194, ${opacity})`);
-                    grad.addColorStop(1, `rgba(77, 163, 255, ${opacity})`);
-                    
-                    ctx.strokeStyle = grad;
-                    ctx.lineWidth = 1.8;
-                    ctx.setLineDash([3, 4]);
-                    ctx.stroke();
-                    ctx.setLineDash([]);
-                }
-                
-                // Gather spheres for depth-sorting
-                let spheres = [];
-                for (let i = 0; i < numNodes; i++) {
-                    const node = nodes[i];
-                    spheres.push({
-                        x: node.xA, y: node.yA, z: node.zA,
-                        color: '#27e7c2', glow: 'rgba(39, 231, 194, 0.32)'
-                    });
-                    spheres.push({
-                        x: node.xB, y: node.yB, z: node.zB,
-                        color: '#4da3ff', glow: 'rgba(77, 163, 255, 0.32)'
-                    });
-                }
-                
-                // Sort spheres from back to front
-                spheres.sort((a, b) => a.z - b.z);
-                
-                // Draw spheres
-                spheres.forEach(s => {
-                    const scale = 0.65 + 0.35 * ((s.z + radius) / (2 * radius));
-                    const size = 6.2 * scale;
-                    
-                    if (s.z > -15) {
-                        ctx.beginPath();
-                        ctx.arc(s.x, s.y, size * 2.3, 0, Math.PI * 2);
-                        ctx.fillStyle = s.glow;
-                        ctx.fill();
-                    }
-                    
-                    ctx.beginPath();
-                    ctx.arc(s.x, s.y, size, 0, Math.PI * 2);
-                    
-                    const grad = ctx.createRadialGradient(
-                        s.x - size * 0.35, s.y - size * 0.35, size * 0.1,
-                        s.x, s.y, size
-                    );
-                    grad.addColorStop(0, '#ffffff');
-                    grad.addColorStop(0.3, s.color);
-                    grad.addColorStop(1, '#050b16');
-                    
-                    ctx.fillStyle = grad;
-                    ctx.fill();
-                });
-                
-                requestAnimationFrame(draw);
-            }
-            
-            draw();
-        })();
-        </script>
         """,
         unsafe_allow_html=True,
     )
@@ -1248,182 +1154,56 @@ def organ_svg_markup(disease):
     if disease == "Diabetes":
         return f"""
         <svg class="organ-svg" viewBox="0 0 360 240" style="--organ-tone:{tone};" role="img" aria-label="Interactive pancreas organ drawing">
-            <defs>
-                <linearGradient id="pancGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stop-color="{tone}" stop-opacity="0.25"/>
-                    <stop offset="100%" stop-color="{tone}" stop-opacity="0.05"/>
-                </linearGradient>
-            </defs>
-            <style>
-                @keyframes isletPulse {{
-                    0%, 100% {{ transform: scale(0.85); opacity: 0.5; }}
-                    50% {{ transform: scale(1.2); opacity: 1; filter: drop-shadow(0 0 8px {tone}); }}
-                }}
-                @keyframes particleFloat {{
-                    0% {{ transform: translate(0, 0); opacity: 0; }}
-                    20% {{ opacity: 0.8; }}
-                    80% {{ opacity: 0.8; }}
-                    100% {{ transform: translate(40px, -50px); opacity: 0; }}
-                }}
-                .islet {{
-                    animation: isletPulse 3s ease-in-out infinite;
-                    transform-origin: center;
-                }}
-                .panc-particle {{
-                    animation: particleFloat 4s ease-in-out infinite;
-                    fill: {tone};
-                }}
-            </style>
-            <!-- Pancreas Outer Shape -->
-            <path class="organ-main" fill="url(#pancGrad)" d="M63 130 C80 76, 132 72, 164 103 C186 124, 217 104, 247 84 C288 58, 333 80, 327 125 C321 169, 275 179, 235 158 C204 142, 185 145, 164 166 C132 199, 76 184, 63 130 Z"/>
-            
-            <!-- Capillaries -->
+            <path class="organ-main" d="M63 130 C80 76, 132 72, 164 103 C186 124, 217 104, 247 84 C288 58, 333 80, 327 125 C321 169, 275 179, 235 158 C204 142, 185 145, 164 166 C132 199, 76 184, 63 130 Z"/>
             <path class="organ-secondary" d="M96 135 C135 103, 180 128, 222 108 C254 94, 282 95, 306 116"/>
             <path class="organ-secondary" d="M118 158 C145 143, 175 149, 204 137"/>
-            
-            <!-- Islets of Langerhans (Pulsing clusters) -->
-            <circle class="organ-node islet" cx="118" cy="111" r="7" style="animation-delay: 0s;"/>
-            <circle class="organ-node islet" cx="150" cy="125" r="5" style="animation-delay: 0.5s;"/>
-            <circle class="organ-node islet" cx="203" cy="132" r="8" style="animation-delay: 1s;"/>
-            <circle class="organ-node islet" cx="245" cy="120" r="6" style="animation-delay: 1.5s;"/>
-            <circle class="organ-node islet" cx="287" cy="116" r="7" style="animation-delay: 2s;"/>
-            
-            <!-- Floating insulin/glucose particles -->
-            <circle class="panc-particle" cx="130" cy="150" r="3" style="animation-delay: 0.2s;"/>
-            <circle class="panc-particle" cx="180" cy="160" r="2.5" style="animation-delay: 1.2s;"/>
-            <circle class="panc-particle" cx="220" cy="145" r="3.5" style="animation-delay: 2.2s;"/>
-            <circle class="panc-particle" cx="260" cy="130" r="2" style="animation-delay: 0.8s;"/>
-            
-            <text x="100" y="215" fill="#8fb2d8" font-size="12" font-weight="800" letter-spacing="1">PANCREAS / METABOLIC</text>
+            <circle class="organ-node" cx="118" cy="111" r="6"/>
+            <circle class="organ-node" cx="203" cy="132" r="7"/>
+            <circle class="organ-node" cx="287" cy="116" r="6"/>
+            <text x="118" y="220" fill="#8fb2d8" font-size="13" font-weight="800">PANCREAS / INSULIN RESPONSE</text>
         </svg>
         """
     if disease == "Heart":
         return f"""
         <svg class="organ-svg" viewBox="0 0 360 240" style="--organ-tone:{tone};" role="img" aria-label="Interactive heart organ drawing">
-            <defs>
-                <linearGradient id="heartGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stop-color="{tone}" stop-opacity="0.25"/>
-                    <stop offset="100%" stop-color="{tone}" stop-opacity="0.05"/>
-                </linearGradient>
-            </defs>
-            <style>
-                @keyframes heartbeat {{
-                    0%, 100% {{ transform: scale(1); }}
-                    15% {{ transform: scale(1.06); }}
-                    30% {{ transform: scale(0.98); }}
-                    45% {{ transform: scale(1.12); }}
-                    70% {{ transform: scale(1); }}
-                }}
-                .heart-main {{
-                    animation: heartbeat 1.5s ease-in-out infinite;
-                    transform-origin: 180px 120px;
-                }}
-                .capillary-pulse {{
-                    stroke-dasharray: 6 12;
-                    animation: vesselFlow 2s linear infinite;
-                }}
-            </style>
-            <!-- Aorta & Vena Cava back structures -->
-            <path d="M160 50 C155 20, 195 15, 200 40 L200 70" fill="none" stroke="{tone}" stroke-width="7" stroke-linecap="round" opacity="0.6"/>
-            <path d="M130 25 L130 65" fill="none" stroke="#4da3ff" stroke-width="8" stroke-linecap="round" opacity="0.6"/>
-            
-            <!-- Heart silhouette (Beating) -->
-            <path class="organ-main heart-main" fill="url(#heartGrad)" d="M180 205 C72 136, 55 65, 106 43 C137 30, 165 49, 180 76 C196 49, 224 30, 255 43 C306 65, 288 136, 180 205 Z"/>
-            
-            <!-- Heart Coronary Arteries (Dashed Flowing) -->
-            <path class="organ-secondary capillary-pulse" d="M180 76 C169 111, 173 144, 180 205" stroke="{tone}"/>
-            <path class="organ-secondary capillary-pulse" d="M130 78 C150 94, 166 112, 181 135" stroke="#4da3ff"/>
-            <path class="organ-secondary capillary-pulse" d="M203 116 C225 100, 251 86, 260 70" stroke="{tone}"/>
-            
-            <!-- Node indicators -->
+            <path class="organ-main" d="M180 205 C72 136, 55 65, 106 43 C137 30, 165 49, 180 76 C196 49, 224 30, 255 43 C306 65, 288 136, 180 205 Z"/>
+            <path class="organ-secondary" d="M180 76 C169 111, 173 144, 180 205"/>
+            <path class="organ-secondary" d="M130 78 C150 94, 166 112, 181 135 C203 116, 225 100, 251 86"/>
+            <path class="organ-secondary" d="M145 35 C142 18, 151 11, 168 23"/>
+            <path class="organ-secondary" d="M217 35 C220 18, 211 11, 194 23"/>
             <circle class="organ-node" cx="142" cy="91" r="6"/>
             <circle class="organ-node" cx="218" cy="91" r="6"/>
             <circle class="organ-node" cx="180" cy="141" r="7"/>
-            
-            <text x="110" y="222" fill="#8fb2d8" font-size="12" font-weight="800" letter-spacing="1">HEART / CARDIOVASCULAR</text>
+            <text x="118" y="225" fill="#8fb2d8" font-size="13" font-weight="800">HEART / CARDIAC RISK</text>
         </svg>
         """
     if disease == "Liver":
         return f"""
         <svg class="organ-svg" viewBox="0 0 360 240" style="--organ-tone:{tone};" role="img" aria-label="Interactive liver organ drawing">
-            <defs>
-                <linearGradient id="liverGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stop-color="{tone}" stop-opacity="0.25"/>
-                    <stop offset="100%" stop-color="{tone}" stop-opacity="0.05"/>
-                </linearGradient>
-            </defs>
-            <style>
-                @keyframes detoxBubble {{
-                    0% {{ transform: translate(0, 0); opacity: 0; }}
-                    20% {{ opacity: 0.7; }}
-                    80% {{ opacity: 0.7; }}
-                    100% {{ transform: translate(60px, -20px); opacity: 0; }}
-                }}
-                .bubble {{
-                    animation: detoxBubble 5s ease-in-out infinite;
-                    fill: {tone};
-                }}
-            </style>
-            <!-- Main Liver Shape -->
-            <path class="organ-main" fill="url(#liverGrad)" d="M45 111 C68 57, 142 43, 224 55 C294 66, 333 98, 313 145 C291 198, 201 186, 154 161 C116 141, 71 163, 50 140 C41 131, 39 122, 45 111 Z"/>
-            
-            <!-- Hepatic portal vein flows -->
+            <path class="organ-main" d="M45 111 C68 57, 142 43, 224 55 C294 66, 333 98, 313 145 C291 198, 201 186, 154 161 C116 141, 71 163, 50 140 C41 131, 39 122, 45 111 Z"/>
             <path class="organ-secondary" d="M142 60 C154 100, 153 133, 136 166"/>
             <path class="organ-secondary" d="M162 112 C201 101, 244 111, 286 137"/>
             <path class="organ-secondary" d="M95 125 C123 109, 157 109, 184 128"/>
-            
-            <!-- Detox/Enzyme bubbles -->
-            <circle class="bubble" cx="100" cy="110" r="2.5" style="animation-delay: 0.5s;"/>
-            <circle class="bubble" cx="130" cy="90" r="3.5" style="animation-delay: 1.8s;"/>
-            <circle class="bubble" cx="180" cy="120" r="2" style="animation-delay: 3s;"/>
-            <circle class="bubble" cx="220" cy="100" r="3" style="animation-delay: 0.2s;"/>
-            <circle class="bubble" cx="250" cy="130" r="2.5" style="animation-delay: 1.5s;"/>
-            
-            <!-- Functional nodes -->
             <circle class="organ-node" cx="142" cy="103" r="7"/>
             <circle class="organ-node" cx="210" cy="115" r="6"/>
             <circle class="organ-node" cx="276" cy="139" r="6"/>
-            
-            <text x="120" y="215" fill="#8fb2d8" font-size="12" font-weight="800" letter-spacing="1">LIVER / HEPATOBILIARY</text>
+            <text x="112" y="222" fill="#8fb2d8" font-size="13" font-weight="800">LIVER / ENZYME PATTERN</text>
         </svg>
         """
     return f"""
     <svg class="organ-svg" viewBox="0 0 360 240" style="--organ-tone:{tone};" role="img" aria-label="Interactive kidney organ drawing">
-        <defs>
-            <linearGradient id="kidneyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="{tone}" stop-opacity="0.25"/>
-                <stop offset="100%" stop-color="{tone}" stop-opacity="0.05"/>
-            </linearGradient>
-        </defs>
-        <style>
-            @keyframes excretionFlow {{
-                0% {{ stroke-dashoffset: 0; }}
-                100% {{ stroke-dashoffset: -32; }}
-            }}
-            .excretion-path {{
-                stroke-dasharray: 5 8;
-                animation: excretionFlow 2.5s linear infinite;
-            }}
-        </style>
-        <!-- Left Kidney -->
-        <path class="organ-main" fill="url(#kidneyGrad)" d="M127 41 C77 51, 54 111, 76 158 C91 190, 124 202, 153 184 C175 170, 170 138, 154 122 C139 107, 157 82, 156 63 C155 47, 144 38, 127 41 Z"/>
-        
-        <!-- Right Kidney -->
-        <path class="organ-main" fill="url(#kidneyGrad)" d="M233 41 C283 51, 306 111, 284 158 C269 190, 236 202, 207 184 C185 170, 190 138, 206 122 C221 107, 203 82, 204 63 C205 47, 216 38, 233 41 Z"/>
-        
-        <!-- Renal Vessels / Ureters -->
-        <path class="organ-secondary excretion-path" d="M180 54 C177 94, 177 128, 180 172" stroke="#4da3ff"/>
-        <path class="organ-secondary excretion-path" d="M156 125 C172 128, 178 138, 180 172" stroke="{tone}"/>
-        <path class="organ-secondary excretion-path" d="M204 125 C188 128, 182 138, 180 172" stroke="{tone}"/>
-        
-        <!-- Functional nodes -->
+        <path class="organ-main" d="M127 41 C77 51, 54 111, 76 158 C91 190, 124 202, 153 184 C175 170, 170 138, 154 122 C139 107, 157 82, 156 63 C155 47, 144 38, 127 41 Z"/>
+        <path class="organ-main" d="M233 41 C283 51, 306 111, 284 158 C269 190, 236 202, 207 184 C185 170, 190 138, 206 122 C221 107, 203 82, 204 63 C205 47, 216 38, 233 41 Z"/>
+        <path class="organ-secondary" d="M180 54 C177 94, 177 128, 180 172"/>
+        <path class="organ-secondary" d="M156 125 C172 128, 178 138, 180 172"/>
+        <path class="organ-secondary" d="M204 125 C188 128, 182 138, 180 172"/>
         <circle class="organ-node" cx="126" cy="102" r="6"/>
         <circle class="organ-node" cx="234" cy="102" r="6"/>
         <circle class="organ-node" cx="180" cy="172" r="7"/>
-        
-        <text x="120" y="215" fill="#8fb2d8" font-size="12" font-weight="800" letter-spacing="1">KIDNEYS / RENAL SYSTEM</text>
+        <text x="110" y="225" fill="#8fb2d8" font-size="13" font-weight="800">KIDNEYS / FILTRATION</text>
     </svg>
     """
+
 
 def render_organ_visual(disease):
     data = ORGAN_DATA[disease]
@@ -1443,285 +1223,6 @@ def render_organ_visual(disease):
         )
     with col2:
         st.markdown(organ_svg_markup(disease), unsafe_allow_html=True)
-
-
-def render_hero():
-    components.html(
-        """
-        <div class="hero-wrap">
-            <div class="hero-content">
-                <div class="hero-pill"><span></span> AI-powered blood analysis</div>
-                <h1>Organ-level disease risk intelligence</h1>
-                <p>
-                    Input your blood report values to get instant risk scores, biomarker comparison,
-                    downloadable reports, and estimated future health projections.
-                </p>
-                <div class="stat-row">
-                    <div class="stat-card"><strong>4</strong><small>Organs monitored</small></div>
-                    <div class="stat-card"><strong>12+</strong><small>Disease signals</small></div>
-                    <div class="stat-card"><strong>PDF</strong><small>Medical report</small></div>
-                </div>
-            </div>
-            <canvas id="dnaCanvas" width="360" height="300" aria-label="Interactive DNA double helix"></canvas>
-        </div>
-        <style>
-            html, body {
-                margin: 0;
-                background: transparent;
-                color: #f5f8ff;
-                font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-                overflow: hidden;
-            }
-            .hero-wrap {
-                min-height: 292px;
-                position: relative;
-                overflow: hidden;
-                border: 1px solid rgba(77, 163, 255, 0.16);
-                border-radius: 18px;
-                background:
-                    radial-gradient(circle at 82% 24%, rgba(39, 231, 194, 0.14), transparent 32%),
-                    radial-gradient(circle at 16% 12%, rgba(77, 163, 255, 0.12), transparent 34%),
-                    linear-gradient(135deg, rgba(7, 15, 29, 0.96), rgba(5, 11, 22, 0.92));
-                box-shadow: 0 24px 50px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.08);
-                transform-style: preserve-3d;
-            }
-            .hero-content {
-                position: relative;
-                z-index: 2;
-                max-width: 720px;
-                padding: 28px 32px;
-            }
-            .hero-pill {
-                display: inline-flex;
-                align-items: center;
-                gap: 9px;
-                color: #69f4d8;
-                background: rgba(39, 231, 194, 0.08);
-                border: 1px solid rgba(39, 231, 194, 0.22);
-                border-radius: 999px;
-                padding: 7px 16px;
-                font-weight: 850;
-                text-transform: uppercase;
-                font-size: 12px;
-                letter-spacing: 1px;
-            }
-            .hero-pill span {
-                width: 8px;
-                height: 8px;
-                border-radius: 50%;
-                background: #27e7c2;
-                box-shadow: 0 0 16px #27e7c2;
-                animation: pulse 1.8s infinite ease-in-out;
-            }
-            h1 {
-                max-width: 620px;
-                font-size: clamp(34px, 5vw, 58px);
-                line-height: 1.04;
-                margin: 18px 0 12px 0;
-                font-weight: 900;
-                text-shadow: 0 8px 22px rgba(0,0,0,.38);
-            }
-            p {
-                max-width: 660px;
-                color: #a7c8ee;
-                font-size: 17px;
-                line-height: 1.55;
-                margin: 0;
-            }
-            .stat-row {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 14px;
-                margin-top: 22px;
-            }
-            .stat-card {
-                min-width: 128px;
-                padding: 14px 17px;
-                border: 1px solid rgba(77, 163, 255, .18);
-                border-radius: 14px;
-                background: rgba(15, 26, 46, .72);
-                box-shadow: 0 16px 30px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.08);
-                transition: transform .25s ease, border-color .25s ease;
-            }
-            .stat-card:hover {
-                transform: perspective(700px) rotateX(4deg) rotateY(-5deg) translateY(-3px);
-                border-color: rgba(39, 231, 194, .42);
-            }
-            .stat-card strong {
-                display: block;
-                color: #69f4d8;
-                font-size: 24px;
-                line-height: 1;
-            }
-            .stat-card small {
-                color: #8fb2d8;
-                font-size: 13px;
-            }
-            #dnaCanvas {
-                position: absolute;
-                right: 10px;
-                top: -2px;
-                width: 360px;
-                height: 300px;
-                z-index: 1;
-                cursor: grab;
-            }
-            @keyframes pulse {
-                0%, 100% { transform: scale(.86); opacity: .65; }
-                50% { transform: scale(1.15); opacity: 1; }
-            }
-            @media (max-width: 820px) {
-                #dnaCanvas { opacity: .32; right: -90px; }
-                .hero-content { padding: 24px; }
-            }
-        </style>
-        <script>
-            const canvas = document.getElementById("dnaCanvas");
-            const ctx = canvas.getContext("2d");
-            const width = canvas.width;
-            const height = canvas.height;
-            let angle = 0;
-            let scrollRotation = 0;
-            let targetScrollRotation = 0;
-            let mouseX = 0;
-            let mouseY = 0;
-            let hover = false;
-
-            function updateScrollRotation() {
-                try {
-                    const parentScroll = window.parent && window.parent.scrollY ? window.parent.scrollY : 0;
-                    targetScrollRotation = parentScroll * 0.006;
-                } catch (error) {
-                    targetScrollRotation = window.scrollY * 0.006;
-                }
-            }
-            window.addEventListener("scroll", updateScrollRotation, { passive: true });
-            try {
-                window.parent.addEventListener("scroll", updateScrollRotation, { passive: true });
-            } catch (error) {}
-
-            canvas.addEventListener("mousemove", (event) => {
-                const rect = canvas.getBoundingClientRect();
-                mouseX = (event.clientX - rect.left - rect.width / 2) / (rect.width / 2);
-                mouseY = (event.clientY - rect.top - rect.height / 2) / (rect.height / 2);
-                hover = true;
-            });
-            canvas.addEventListener("mouseleave", () => {
-                mouseX = 0;
-                mouseY = 0;
-                hover = false;
-            });
-
-            function sphere(x, y, z, color) {
-                const depth = (z + 62) / 124;
-                const radius = 4.5 + depth * 4.2;
-                const glow = color === "#27e7c2" ? "rgba(39,231,194,.32)" : "rgba(77,163,255,.32)";
-                if (z > -18) {
-                    ctx.beginPath();
-                    ctx.arc(x, y, radius * 2.2, 0, Math.PI * 2);
-                    ctx.fillStyle = glow;
-                    ctx.fill();
-                }
-                const gradient = ctx.createRadialGradient(x - radius * .3, y - radius * .3, 1, x, y, radius);
-                gradient.addColorStop(0, "#ffffff");
-                gradient.addColorStop(.28, color);
-                gradient.addColorStop(1, "#06101f");
-                ctx.beginPath();
-                ctx.arc(x, y, radius, 0, Math.PI * 2);
-                ctx.fillStyle = gradient;
-                ctx.fill();
-            }
-
-            function draw() {
-                ctx.clearRect(0, 0, width, height);
-                updateScrollRotation();
-                scrollRotation += (targetScrollRotation - scrollRotation) * 0.08;
-                angle += 0.014 + (hover ? Math.abs(mouseX) * 0.02 : 0);
-
-                const nodes = [];
-                const count = 16;
-                const strandRadius = 70;
-                const totalAngle = angle + scrollRotation + mouseX * .35;
-                const tilt = .06 + mouseY * .22;
-
-                for (let i = 0; i < count; i++) {
-                    const progress = i / (count - 1);
-                    const y = 28 + progress * (height - 56);
-                    const phase = progress * Math.PI * 2.6;
-                    const a = totalAngle + phase;
-                    const b = a + Math.PI;
-                    const zA = Math.sin(a) * strandRadius;
-                    const zB = Math.sin(b) * strandRadius;
-                    nodes.push({
-                        ax: width / 2 + Math.cos(a) * strandRadius,
-                        ay: y + zA * tilt,
-                        az: zA,
-                        bx: width / 2 + Math.cos(b) * strandRadius,
-                        by: y + zB * tilt,
-                        bz: zB,
-                    });
-                }
-
-                nodes.forEach((node) => {
-                    const opacity = .18 + .36 * (((node.az + node.bz) / 2 + strandRadius) / (2 * strandRadius));
-                    const gradient = ctx.createLinearGradient(node.ax, node.ay, node.bx, node.by);
-                    gradient.addColorStop(0, `rgba(39,231,194,${opacity})`);
-                    gradient.addColorStop(1, `rgba(77,163,255,${opacity})`);
-                    ctx.beginPath();
-                    ctx.moveTo(node.ax, node.ay);
-                    ctx.lineTo(node.bx, node.by);
-                    ctx.strokeStyle = gradient;
-                    ctx.lineWidth = 2;
-                    ctx.setLineDash([4, 5]);
-                    ctx.stroke();
-                    ctx.setLineDash([]);
-                });
-
-                const spheres = [];
-                nodes.forEach((node) => {
-                    spheres.push({ x: node.ax, y: node.ay, z: node.az, color: "#27e7c2" });
-                    spheres.push({ x: node.bx, y: node.by, z: node.bz, color: "#4da3ff" });
-                });
-                spheres.sort((left, right) => left.z - right.z);
-                spheres.forEach((item) => sphere(item.x, item.y, item.z, item.color));
-                requestAnimationFrame(draw);
-            }
-            draw();
-        </script>
-        """,
-        height=315,
-        scrolling=False,
-    )
-
-
-def render_organ_visual(disease):
-    data = ORGAN_DATA[disease]
-    col1, col2 = st.columns([1.05, 0.95])
-    with col1:
-        st.markdown(
-            f"""
-            <div class="organ-visual-intro organ-copy">
-                <h2>{data['organ']} interactive map</h2>
-                <p>
-                    This visual highlights the organ system connected to the selected blood-marker panel.
-                    Hover the drawing to speed up the motion and emphasize the active biological pathways.
-                </p>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-    with col2:
-        components.html(
-            f"""
-            <html>
-                <body style="margin:0;background:transparent;display:flex;justify-content:center;align-items:center;">
-                    {organ_svg_markup(disease)}
-                </body>
-            </html>
-            """,
-            height=270,
-            scrolling=False,
-        )
 
 
 def render_disease_intelligence(disease):
@@ -3052,197 +2553,6 @@ def render_specific_disease_patterns(disease, input_values, report_values, model
                 )
 
 
-def render_hero():
-    dna_pairs = "\n".join(
-        [
-            f'<span class="dna-pair" style="--i:{i}; --top:{18 + i * 16}px; --rot:{(i * 28) % 360}deg;"></span>'
-            for i in range(15)
-        ]
-    )
-    st.markdown(
-        dedent(f"""
-        <style>
-        .safe-hero {{
-            position: relative;
-            overflow: hidden;
-            min-height: 310px;
-            border: 1px solid rgba(77, 163, 255, 0.18);
-            border-radius: 18px;
-            padding: 30px 34px;
-            margin: 8px 0 24px 0;
-            background:
-                radial-gradient(circle at 82% 28%, rgba(39,231,194,.16), transparent 30%),
-                radial-gradient(circle at 18% 12%, rgba(77,163,255,.14), transparent 34%),
-                linear-gradient(135deg, rgba(7,15,29,.98), rgba(4,10,20,.94));
-            box-shadow: 0 24px 55px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.08);
-            transform-style: preserve-3d;
-        }}
-        .safe-hero-content {{
-            position: relative;
-            z-index: 2;
-            max-width: 690px;
-        }}
-        .safe-pill {{
-            display: inline-flex;
-            align-items: center;
-            gap: 9px;
-            color: #69f4d8;
-            background: rgba(39, 231, 194, 0.08);
-            border: 1px solid rgba(39, 231, 194, 0.24);
-            border-radius: 999px;
-            padding: 7px 16px;
-            font-weight: 850;
-            text-transform: uppercase;
-            font-size: 12px;
-            letter-spacing: 1px;
-        }}
-        .safe-pill-dot {{
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #27e7c2;
-            box-shadow: 0 0 16px #27e7c2;
-            animation: safePulse 1.8s infinite ease-in-out;
-        }}
-        .safe-hero h1 {{
-            margin: 18px 0 12px 0;
-            max-width: 650px;
-            font-size: clamp(2.2rem, 5vw, 4rem);
-            line-height: 1.04;
-            font-weight: 900;
-        }}
-        .safe-hero-copy {{
-            color: #a7c8ee;
-            max-width: 660px;
-            font-size: 1.08rem;
-            line-height: 1.55;
-        }}
-        .safe-stat-row {{
-            display: flex;
-            flex-wrap: wrap;
-            gap: 14px;
-            margin-top: 24px;
-        }}
-        .safe-stat {{
-            min-width: 128px;
-            padding: 14px 17px;
-            border: 1px solid rgba(77, 163, 255, .18);
-            border-radius: 14px;
-            background: rgba(15, 26, 46, .72);
-            box-shadow: 0 16px 30px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.08);
-            transition: transform .25s ease, border-color .25s ease, box-shadow .25s ease;
-        }}
-        .safe-stat:hover {{
-            transform: perspective(700px) rotateX(4deg) rotateY(-5deg) translateY(-3px);
-            border-color: rgba(39, 231, 194, .42);
-            box-shadow: 0 22px 42px rgba(0,0,0,.36), 0 0 22px rgba(39,231,194,.12);
-        }}
-        .safe-stat strong {{
-            display: block;
-            color: #69f4d8;
-            font-size: 1.5rem;
-            line-height: 1;
-        }}
-        .safe-stat span {{
-            color: #8fb2d8;
-            font-size: .86rem;
-        }}
-        .safe-dna-stage {{
-            position: absolute;
-            right: 42px;
-            top: 18px;
-            z-index: 1;
-            width: 280px;
-            height: 270px;
-            perspective: 900px;
-            transform-style: preserve-3d;
-            animation: safeDnaFloat 5.5s ease-in-out infinite;
-        }}
-        .safe-dna-stage::before {{
-            content: "";
-            position: absolute;
-            inset: 18px 34px;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(39,231,194,.12), transparent 62%);
-            filter: blur(4px);
-        }}
-        .dna-pair {{
-            position: absolute;
-            top: var(--top);
-            left: 50%;
-            width: 158px;
-            height: 2px;
-            transform: translateX(-50%) rotate(var(--rot));
-            transform-origin: center;
-            background: linear-gradient(90deg, rgba(39,231,194,.05), rgba(39,231,194,.78), rgba(77,163,255,.78), rgba(77,163,255,.05));
-            box-shadow: 0 0 12px rgba(77,163,255,.24);
-            animation: safeDnaTwist 4.8s linear infinite;
-            animation-delay: calc(var(--i) * -0.12s);
-        }}
-        .dna-pair::before,
-        .dna-pair::after {{
-            content: "";
-            position: absolute;
-            top: 50%;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            transform: translateY(-50%);
-            box-shadow: 0 0 18px currentColor;
-        }}
-        .dna-pair::before {{
-            left: -6px;
-            color: #27e7c2;
-            background: radial-gradient(circle at 30% 30%, #ffffff, #27e7c2 34%, #06251f 100%);
-        }}
-        .dna-pair::after {{
-            right: -6px;
-            color: #4da3ff;
-            background: radial-gradient(circle at 30% 30%, #ffffff, #4da3ff 34%, #06182c 100%);
-        }}
-        .safe-dna-stage:hover .dna-pair {{
-            animation-duration: 1.8s;
-        }}
-        @keyframes safePulse {{
-            0%, 100% {{ transform: scale(.86); opacity: .65; }}
-            50% {{ transform: scale(1.15); opacity: 1; }}
-        }}
-        @keyframes safeDnaFloat {{
-            0%, 100% {{ transform: rotateX(7deg) rotateY(-13deg) translateY(0); }}
-            50% {{ transform: rotateX(11deg) rotateY(-2deg) translateY(-10px); }}
-        }}
-        @keyframes safeDnaTwist {{
-            from {{ transform: translateX(-50%) rotate(var(--rot)); }}
-            to {{ transform: translateX(-50%) rotate(calc(var(--rot) + 360deg)); }}
-        }}
-        @media (max-width: 900px) {{
-            .safe-dna-stage {{ opacity: .32; right: -70px; }}
-            .safe-hero {{ min-height: 350px; }}
-        }}
-        </style>
-        <div class="safe-hero">
-            <div class="safe-hero-content">
-                <div class="safe-pill"><span class="safe-pill-dot"></span> AI-powered blood analysis</div>
-                <h1>Organ-level disease risk intelligence</h1>
-                <div class="safe-hero-copy">
-                    Input your blood report values to get instant risk scores, biomarker comparison,
-                    downloadable reports, and estimated future health projections.
-                </div>
-                <div class="safe-stat-row">
-                    <div class="safe-stat"><strong>4</strong><span>Organs monitored</span></div>
-                    <div class="safe-stat"><strong>12+</strong><span>Disease signals</span></div>
-                    <div class="safe-stat"><strong>PDF</strong><span>Medical report</span></div>
-                </div>
-            </div>
-            <div class="safe-dna-stage" aria-label="Animated DNA double helix">
-                {dna_pairs}
-            </div>
-        </div>
-        """),
-        unsafe_allow_html=True,
-    )
-
-
 apply_dashboard_theme()
 render_hero()
 
@@ -3492,4 +2802,3 @@ if st.button(f"Analyse & predict {disease} risk", use_container_width=True):
 
 st.markdown("---")
 st.markdown("**BioPredict AI** | Organ-level AI screening dashboard built with Machine Learning")
-
