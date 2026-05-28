@@ -3051,6 +3051,197 @@ def render_specific_disease_patterns(disease, input_values, report_values, model
                 )
 
 
+def render_hero():
+    dna_pairs = "\n".join(
+        [
+            f'<span class="dna-pair" style="--i:{i}; --top:{18 + i * 16}px; --rot:{(i * 28) % 360}deg;"></span>'
+            for i in range(15)
+        ]
+    )
+    st.markdown(
+        f"""
+        <style>
+        .safe-hero {{
+            position: relative;
+            overflow: hidden;
+            min-height: 310px;
+            border: 1px solid rgba(77, 163, 255, 0.18);
+            border-radius: 18px;
+            padding: 30px 34px;
+            margin: 8px 0 24px 0;
+            background:
+                radial-gradient(circle at 82% 28%, rgba(39,231,194,.16), transparent 30%),
+                radial-gradient(circle at 18% 12%, rgba(77,163,255,.14), transparent 34%),
+                linear-gradient(135deg, rgba(7,15,29,.98), rgba(4,10,20,.94));
+            box-shadow: 0 24px 55px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.08);
+            transform-style: preserve-3d;
+        }}
+        .safe-hero-content {{
+            position: relative;
+            z-index: 2;
+            max-width: 690px;
+        }}
+        .safe-pill {{
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            color: #69f4d8;
+            background: rgba(39, 231, 194, 0.08);
+            border: 1px solid rgba(39, 231, 194, 0.24);
+            border-radius: 999px;
+            padding: 7px 16px;
+            font-weight: 850;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 1px;
+        }}
+        .safe-pill-dot {{
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #27e7c2;
+            box-shadow: 0 0 16px #27e7c2;
+            animation: safePulse 1.8s infinite ease-in-out;
+        }}
+        .safe-hero h1 {{
+            margin: 18px 0 12px 0;
+            max-width: 650px;
+            font-size: clamp(2.2rem, 5vw, 4rem);
+            line-height: 1.04;
+            font-weight: 900;
+        }}
+        .safe-hero-copy {{
+            color: #a7c8ee;
+            max-width: 660px;
+            font-size: 1.08rem;
+            line-height: 1.55;
+        }}
+        .safe-stat-row {{
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            margin-top: 24px;
+        }}
+        .safe-stat {{
+            min-width: 128px;
+            padding: 14px 17px;
+            border: 1px solid rgba(77, 163, 255, .18);
+            border-radius: 14px;
+            background: rgba(15, 26, 46, .72);
+            box-shadow: 0 16px 30px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.08);
+            transition: transform .25s ease, border-color .25s ease, box-shadow .25s ease;
+        }}
+        .safe-stat:hover {{
+            transform: perspective(700px) rotateX(4deg) rotateY(-5deg) translateY(-3px);
+            border-color: rgba(39, 231, 194, .42);
+            box-shadow: 0 22px 42px rgba(0,0,0,.36), 0 0 22px rgba(39,231,194,.12);
+        }}
+        .safe-stat strong {{
+            display: block;
+            color: #69f4d8;
+            font-size: 1.5rem;
+            line-height: 1;
+        }}
+        .safe-stat span {{
+            color: #8fb2d8;
+            font-size: .86rem;
+        }}
+        .safe-dna-stage {{
+            position: absolute;
+            right: 42px;
+            top: 18px;
+            z-index: 1;
+            width: 280px;
+            height: 270px;
+            perspective: 900px;
+            transform-style: preserve-3d;
+            animation: safeDnaFloat 5.5s ease-in-out infinite;
+        }}
+        .safe-dna-stage::before {{
+            content: "";
+            position: absolute;
+            inset: 18px 34px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(39,231,194,.12), transparent 62%);
+            filter: blur(4px);
+        }}
+        .dna-pair {{
+            position: absolute;
+            top: var(--top);
+            left: 50%;
+            width: 158px;
+            height: 2px;
+            transform: translateX(-50%) rotate(var(--rot));
+            transform-origin: center;
+            background: linear-gradient(90deg, rgba(39,231,194,.05), rgba(39,231,194,.78), rgba(77,163,255,.78), rgba(77,163,255,.05));
+            box-shadow: 0 0 12px rgba(77,163,255,.24);
+            animation: safeDnaTwist 4.8s linear infinite;
+            animation-delay: calc(var(--i) * -0.12s);
+        }}
+        .dna-pair::before,
+        .dna-pair::after {{
+            content: "";
+            position: absolute;
+            top: 50%;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            transform: translateY(-50%);
+            box-shadow: 0 0 18px currentColor;
+        }}
+        .dna-pair::before {{
+            left: -6px;
+            color: #27e7c2;
+            background: radial-gradient(circle at 30% 30%, #ffffff, #27e7c2 34%, #06251f 100%);
+        }}
+        .dna-pair::after {{
+            right: -6px;
+            color: #4da3ff;
+            background: radial-gradient(circle at 30% 30%, #ffffff, #4da3ff 34%, #06182c 100%);
+        }}
+        .safe-dna-stage:hover .dna-pair {{
+            animation-duration: 1.8s;
+        }}
+        @keyframes safePulse {{
+            0%, 100% {{ transform: scale(.86); opacity: .65; }}
+            50% {{ transform: scale(1.15); opacity: 1; }}
+        }}
+        @keyframes safeDnaFloat {{
+            0%, 100% {{ transform: rotateX(7deg) rotateY(-13deg) translateY(0); }}
+            50% {{ transform: rotateX(11deg) rotateY(-2deg) translateY(-10px); }}
+        }}
+        @keyframes safeDnaTwist {{
+            from {{ transform: translateX(-50%) rotate(var(--rot)); }}
+            to {{ transform: translateX(-50%) rotate(calc(var(--rot) + 360deg)); }}
+        }}
+        @media (max-width: 900px) {{
+            .safe-dna-stage {{ opacity: .32; right: -70px; }}
+            .safe-hero {{ min-height: 350px; }}
+        }}
+        </style>
+        <div class="safe-hero">
+            <div class="safe-hero-content">
+                <div class="safe-pill"><span class="safe-pill-dot"></span> AI-powered blood analysis</div>
+                <h1>Organ-level disease risk intelligence</h1>
+                <div class="safe-hero-copy">
+                    Input your blood report values to get instant risk scores, biomarker comparison,
+                    downloadable reports, and estimated future health projections.
+                </div>
+                <div class="safe-stat-row">
+                    <div class="safe-stat"><strong>4</strong><span>Organs monitored</span></div>
+                    <div class="safe-stat"><strong>12+</strong><span>Disease signals</span></div>
+                    <div class="safe-stat"><strong>PDF</strong><span>Medical report</span></div>
+                </div>
+            </div>
+            <div class="safe-dna-stage" aria-label="Animated DNA double helix">
+                {dna_pairs}
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 apply_dashboard_theme()
 render_hero()
 
