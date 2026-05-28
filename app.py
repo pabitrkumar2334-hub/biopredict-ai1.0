@@ -10,6 +10,7 @@ from datetime import datetime
 import re
 import hashlib
 from io import BytesIO
+from textwrap import dedent
 
 try:
     from PIL import Image, ImageOps, ImageFilter
@@ -3059,7 +3060,7 @@ def render_hero():
         ]
     )
     st.markdown(
-        f"""
+        dedent(f"""
         <style>
         .safe-hero {{
             position: relative;
@@ -3237,7 +3238,7 @@ def render_hero():
                 {dna_pairs}
             </div>
         </div>
-        """,
+        """),
         unsafe_allow_html=True,
     )
 
