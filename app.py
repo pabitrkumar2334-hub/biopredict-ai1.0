@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import pickle
 import pandas as pd
 import plotly.graph_objects as go
@@ -1441,6 +1442,285 @@ def render_organ_visual(disease):
         )
     with col2:
         st.markdown(organ_svg_markup(disease), unsafe_allow_html=True)
+
+
+def render_hero():
+    components.html(
+        """
+        <div class="hero-wrap">
+            <div class="hero-content">
+                <div class="hero-pill"><span></span> AI-powered blood analysis</div>
+                <h1>Organ-level disease risk intelligence</h1>
+                <p>
+                    Input your blood report values to get instant risk scores, biomarker comparison,
+                    downloadable reports, and estimated future health projections.
+                </p>
+                <div class="stat-row">
+                    <div class="stat-card"><strong>4</strong><small>Organs monitored</small></div>
+                    <div class="stat-card"><strong>12+</strong><small>Disease signals</small></div>
+                    <div class="stat-card"><strong>PDF</strong><small>Medical report</small></div>
+                </div>
+            </div>
+            <canvas id="dnaCanvas" width="360" height="300" aria-label="Interactive DNA double helix"></canvas>
+        </div>
+        <style>
+            html, body {
+                margin: 0;
+                background: transparent;
+                color: #f5f8ff;
+                font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+                overflow: hidden;
+            }
+            .hero-wrap {
+                min-height: 292px;
+                position: relative;
+                overflow: hidden;
+                border: 1px solid rgba(77, 163, 255, 0.16);
+                border-radius: 18px;
+                background:
+                    radial-gradient(circle at 82% 24%, rgba(39, 231, 194, 0.14), transparent 32%),
+                    radial-gradient(circle at 16% 12%, rgba(77, 163, 255, 0.12), transparent 34%),
+                    linear-gradient(135deg, rgba(7, 15, 29, 0.96), rgba(5, 11, 22, 0.92));
+                box-shadow: 0 24px 50px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.08);
+                transform-style: preserve-3d;
+            }
+            .hero-content {
+                position: relative;
+                z-index: 2;
+                max-width: 720px;
+                padding: 28px 32px;
+            }
+            .hero-pill {
+                display: inline-flex;
+                align-items: center;
+                gap: 9px;
+                color: #69f4d8;
+                background: rgba(39, 231, 194, 0.08);
+                border: 1px solid rgba(39, 231, 194, 0.22);
+                border-radius: 999px;
+                padding: 7px 16px;
+                font-weight: 850;
+                text-transform: uppercase;
+                font-size: 12px;
+                letter-spacing: 1px;
+            }
+            .hero-pill span {
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                background: #27e7c2;
+                box-shadow: 0 0 16px #27e7c2;
+                animation: pulse 1.8s infinite ease-in-out;
+            }
+            h1 {
+                max-width: 620px;
+                font-size: clamp(34px, 5vw, 58px);
+                line-height: 1.04;
+                margin: 18px 0 12px 0;
+                font-weight: 900;
+                text-shadow: 0 8px 22px rgba(0,0,0,.38);
+            }
+            p {
+                max-width: 660px;
+                color: #a7c8ee;
+                font-size: 17px;
+                line-height: 1.55;
+                margin: 0;
+            }
+            .stat-row {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 14px;
+                margin-top: 22px;
+            }
+            .stat-card {
+                min-width: 128px;
+                padding: 14px 17px;
+                border: 1px solid rgba(77, 163, 255, .18);
+                border-radius: 14px;
+                background: rgba(15, 26, 46, .72);
+                box-shadow: 0 16px 30px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.08);
+                transition: transform .25s ease, border-color .25s ease;
+            }
+            .stat-card:hover {
+                transform: perspective(700px) rotateX(4deg) rotateY(-5deg) translateY(-3px);
+                border-color: rgba(39, 231, 194, .42);
+            }
+            .stat-card strong {
+                display: block;
+                color: #69f4d8;
+                font-size: 24px;
+                line-height: 1;
+            }
+            .stat-card small {
+                color: #8fb2d8;
+                font-size: 13px;
+            }
+            #dnaCanvas {
+                position: absolute;
+                right: 10px;
+                top: -2px;
+                width: 360px;
+                height: 300px;
+                z-index: 1;
+                cursor: grab;
+            }
+            @keyframes pulse {
+                0%, 100% { transform: scale(.86); opacity: .65; }
+                50% { transform: scale(1.15); opacity: 1; }
+            }
+            @media (max-width: 820px) {
+                #dnaCanvas { opacity: .32; right: -90px; }
+                .hero-content { padding: 24px; }
+            }
+        </style>
+        <script>
+            const canvas = document.getElementById("dnaCanvas");
+            const ctx = canvas.getContext("2d");
+            const width = canvas.width;
+            const height = canvas.height;
+            let angle = 0;
+            let scrollRotation = 0;
+            let targetScrollRotation = 0;
+            let mouseX = 0;
+            let mouseY = 0;
+            let hover = false;
+
+            function updateScrollRotation() {
+                try {
+                    const parentScroll = window.parent && window.parent.scrollY ? window.parent.scrollY : 0;
+                    targetScrollRotation = parentScroll * 0.006;
+                } catch (error) {
+                    targetScrollRotation = window.scrollY * 0.006;
+                }
+            }
+            window.addEventListener("scroll", updateScrollRotation, { passive: true });
+            try {
+                window.parent.addEventListener("scroll", updateScrollRotation, { passive: true });
+            } catch (error) {}
+
+            canvas.addEventListener("mousemove", (event) => {
+                const rect = canvas.getBoundingClientRect();
+                mouseX = (event.clientX - rect.left - rect.width / 2) / (rect.width / 2);
+                mouseY = (event.clientY - rect.top - rect.height / 2) / (rect.height / 2);
+                hover = true;
+            });
+            canvas.addEventListener("mouseleave", () => {
+                mouseX = 0;
+                mouseY = 0;
+                hover = false;
+            });
+
+            function sphere(x, y, z, color) {
+                const depth = (z + 62) / 124;
+                const radius = 4.5 + depth * 4.2;
+                const glow = color === "#27e7c2" ? "rgba(39,231,194,.32)" : "rgba(77,163,255,.32)";
+                if (z > -18) {
+                    ctx.beginPath();
+                    ctx.arc(x, y, radius * 2.2, 0, Math.PI * 2);
+                    ctx.fillStyle = glow;
+                    ctx.fill();
+                }
+                const gradient = ctx.createRadialGradient(x - radius * .3, y - radius * .3, 1, x, y, radius);
+                gradient.addColorStop(0, "#ffffff");
+                gradient.addColorStop(.28, color);
+                gradient.addColorStop(1, "#06101f");
+                ctx.beginPath();
+                ctx.arc(x, y, radius, 0, Math.PI * 2);
+                ctx.fillStyle = gradient;
+                ctx.fill();
+            }
+
+            function draw() {
+                ctx.clearRect(0, 0, width, height);
+                updateScrollRotation();
+                scrollRotation += (targetScrollRotation - scrollRotation) * 0.08;
+                angle += 0.014 + (hover ? Math.abs(mouseX) * 0.02 : 0);
+
+                const nodes = [];
+                const count = 16;
+                const strandRadius = 70;
+                const totalAngle = angle + scrollRotation + mouseX * .35;
+                const tilt = .06 + mouseY * .22;
+
+                for (let i = 0; i < count; i++) {
+                    const progress = i / (count - 1);
+                    const y = 28 + progress * (height - 56);
+                    const phase = progress * Math.PI * 2.6;
+                    const a = totalAngle + phase;
+                    const b = a + Math.PI;
+                    const zA = Math.sin(a) * strandRadius;
+                    const zB = Math.sin(b) * strandRadius;
+                    nodes.push({
+                        ax: width / 2 + Math.cos(a) * strandRadius,
+                        ay: y + zA * tilt,
+                        az: zA,
+                        bx: width / 2 + Math.cos(b) * strandRadius,
+                        by: y + zB * tilt,
+                        bz: zB,
+                    });
+                }
+
+                nodes.forEach((node) => {
+                    const opacity = .18 + .36 * (((node.az + node.bz) / 2 + strandRadius) / (2 * strandRadius));
+                    const gradient = ctx.createLinearGradient(node.ax, node.ay, node.bx, node.by);
+                    gradient.addColorStop(0, `rgba(39,231,194,${opacity})`);
+                    gradient.addColorStop(1, `rgba(77,163,255,${opacity})`);
+                    ctx.beginPath();
+                    ctx.moveTo(node.ax, node.ay);
+                    ctx.lineTo(node.bx, node.by);
+                    ctx.strokeStyle = gradient;
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([4, 5]);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                });
+
+                const spheres = [];
+                nodes.forEach((node) => {
+                    spheres.push({ x: node.ax, y: node.ay, z: node.az, color: "#27e7c2" });
+                    spheres.push({ x: node.bx, y: node.by, z: node.bz, color: "#4da3ff" });
+                });
+                spheres.sort((left, right) => left.z - right.z);
+                spheres.forEach((item) => sphere(item.x, item.y, item.z, item.color));
+                requestAnimationFrame(draw);
+            }
+            draw();
+        </script>
+        """,
+        height=315,
+        scrolling=False,
+    )
+
+
+def render_organ_visual(disease):
+    data = ORGAN_DATA[disease]
+    col1, col2 = st.columns([1.05, 0.95])
+    with col1:
+        st.markdown(
+            f"""
+            <div class="organ-visual-intro organ-copy">
+                <h2>{data['organ']} interactive map</h2>
+                <p>
+                    This visual highlights the organ system connected to the selected blood-marker panel.
+                    Hover the drawing to speed up the motion and emphasize the active biological pathways.
+                </p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    with col2:
+        components.html(
+            f"""
+            <html>
+                <body style="margin:0;background:transparent;display:flex;justify-content:center;align-items:center;">
+                    {organ_svg_markup(disease)}
+                </body>
+            </html>
+            """,
+            height=270,
+            scrolling=False,
+        )
 
 
 def render_disease_intelligence(disease):
@@ -3020,3 +3300,4 @@ if st.button(f"Analyse & predict {disease} risk", use_container_width=True):
 
 st.markdown("---")
 st.markdown("**BioPredict AI** | Organ-level AI screening dashboard built with Machine Learning")
+
